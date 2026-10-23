@@ -83,8 +83,48 @@ select option{background:#141c30;color:var(--ink)}
 .target{background:linear-gradient(100deg,#0b1b3d,#080f24);border:1px solid #315695;border-left:4px solid var(--blue);border-radius:3px;box-shadow:inset 0 0 24px #00378b40,0 0 12px #0968d51c;padding:14px 16px;margin-bottom:14px}
 .target .eyebrow{color:#76adf5;font-size:9px}
 .target p{color:#b3d3f8}
-.brief{display:flex;align-items:center;justify-content:space-between}
+.brief{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brief .emblem{flex:none;width:54px;height:54px;filter:drop-shadow(0 0 10px #1689ff70)}
 .pattern{font:600 24px var(--mono);letter-spacing:5px;color:#6cdfff;text-shadow:0 0 14px #1689ff}
+
+/* Welcome: two stage cards with mini diagrams of the real screens */
+/* Connect sits right under the brief so it is reachable without scrolling; the cards explain below it */
+#welcome #start{margin:0 0 14px}
+.howto{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 12px}
+.stagecard{min-width:0;padding:12px 14px;background:linear-gradient(160deg,#0d1730,#080e20);border:1px solid #2a4a7f;border-radius:4px;box-shadow:inset 0 1px #3d85d820}
+.stagecard h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:600 11px var(--mono);letter-spacing:2px;text-transform:uppercase;color:#85e5ff}
+.stagecard h3 .stepnum{margin:0;padding:2px 5px;font-size:10px;background:#15396b;border-color:#4bc8ff;box-shadow:0 0 8px #178dff40}
+.stagecard p{margin:10px 0 8px;font-size:13px;color:#a9bddf}
+.stagecard p b{color:#e3efff}
+.costs{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.costs li{padding:3px 6px;font:500 10px var(--mono);letter-spacing:.5px;color:#9fc4ee;background:#0a1430;border:1px solid #2a4a7f;border-radius:2px;white-space:nowrap}
+.costs .warn{color:#ff9bcf;background:#2a1026;border-color:#7a3a62}
+.costs .ok{color:#9eefff;border-color:#3fb6e6}
+.costs .gold{color:#f3d27a;border-color:#9c7d36}
+.mini-intercept{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:center;padding:8px;background:#040a1b;border:1px solid #23406e;border-radius:3px;box-shadow:inset 0 0 18px #071f4d}
+.mini-ref,.mini-block{display:grid;gap:4px;padding:6px 5px;border-radius:2px}
+.mini-ref{background:#0b1b3d;border:1px solid #315695;border-left:3px solid #2e93ff}
+.mini-ref i,.mini-block i{display:block;width:var(--w);height:4px;margin-left:var(--x,0);border-radius:1px;background:#5cdcff}
+.mini-stream{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.mini-block{background:#0f2148;border:1px solid #264b82;border-left:2px solid #2678dc}
+.mini-block i{background:#3f8fd0}
+.mini-block.match{background:#1c5a8f;border-color:#bff3ff;box-shadow:0 0 10px #3cf8;animation:matchpulse 2.4s ease-in-out infinite}
+.mini-block.match i{background:#bff3ff}
+@keyframes matchpulse{50%{box-shadow:0 0 18px #3cf}}
+.mini-block.probe{background:repeating-linear-gradient(135deg,#37172f 0 6px,#2c1229 6px 12px);border-color:#963c72;border-left:3px solid #fa57a2}
+.mini-block.probe i{background:#ff8abf}
+.mini-lock{display:flex;gap:6px;width:max-content;max-width:100%;padding:8px;background:#040918;border:1px solid #34466e;border-radius:3px;box-shadow:inset 0 0 18px #071f4d}
+.mini-lock .slot{width:42px;height:42px;font-size:19px}
+.mini-lock .slot small{right:3px;top:1px;font-size:9px}
+.mini-lock .slot .led{left:7px;right:7px;bottom:3px}
+.tracebrief{display:flex;align-items:center;gap:12px;margin:0 0 10px}
+.tracebrief .bar{flex:none;width:90px;height:10px}
+.tracebrief .bar i{width:62%}
+.tracebrief p{margin:0;font-size:12px}
+.tracebrief b{color:#ff9bcf}
+.keyhints{display:none;margin:2px 0 14px;font-size:11px;color:#8ea7cf;line-height:2}
+kbd{display:inline-block;min-width:1.8em;margin:0 2px;padding:1px 5px;font:500 10px var(--mono);text-align:center;color:#cfe9ff;background:linear-gradient(#2a4677,#13284d);border:1px solid #3d649f;border-bottom-width:2px;border-radius:3px}
+@media(hover:hover) and (pointer:fine){.keyhints{display:block}}
 
 /* Intercept: reference block beside its label, three-lane looping stream below */
 .intercept-grid{display:flex;flex-direction:column}.intercept-side{display:contents}.stream{order:1}#interceptHint{order:2}#intercept .actions{order:3}
@@ -255,6 +295,22 @@ button.slot.selected .socket{border-color:#66dfff}
   .steps{display:none}
   .target{padding:9px 10px;margin-bottom:8px}
   .reference{gap:6px 10px}
+  #welcome .howto{gap:8px;margin-bottom:10px}
+  .stagecard{padding:9px}
+  .stagecard h3{margin-bottom:8px;font-size:10px;letter-spacing:1px}
+  .stagecard p{margin:8px 0 6px;font-size:11.5px;line-height:1.45}
+  .mini-intercept{grid-template-columns:1fr;gap:6px;padding:6px}
+  .mini-ref{width:56%}
+  .mini-stream{gap:3px}
+  .mini-ref,.mini-block{gap:3px;padding:4px 3px}
+  .mini-ref i,.mini-block i{height:3px}
+  .mini-lock{gap:4px;padding:5px}
+  .mini-lock .slot{width:29px;height:29px;font-size:14px}
+  .mini-lock .slot small{display:none}
+  .mini-lock .slot .led{left:5px;right:5px;bottom:2px;height:2px}
+  .costs{gap:4px}
+  .costs li{padding:2px 4px;font-size:9px;letter-spacing:0}
+  .brief .emblem{width:42px;height:42px}
   #captured{font-size:11px}
   #target{font-size:clamp(11px,3.4vw,14px);padding:6px 8px}
   .stream{height:400px;height:clamp(250px,calc(100vh - 310px),560px);height:clamp(250px,calc(100svh - 300px),560px);padding:0 4px;border-width:1px}
@@ -272,6 +328,7 @@ button.slot.selected .socket{border-color:#66dfff}
 }
 @media(max-width:420px){.panelhead h2{display:none}.panelhead{padding:9px 8px}}
 /* Smallest phones (320px): reclaim chrome so three lanes keep 14-character lines */
+@media(max-width:360px){#welcome .howto{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:360px){header,main{margin-left:0;margin-right:0}main{padding:14px 6px 8px}.body{padding:6px 4px}.stream{padding:0 2px}.streamgroup{gap:4px}.packet{padding:6px 4px 8px;border-left-width:1px}.packet.hazard{border-left-width:3px}#target{font-size:12px}.slot{width:44px;height:44px}.key{min-height:48px;font-size:22px}}
 
 /* Phones in landscape and other short screens */
@@ -293,6 +350,8 @@ button.slot.selected .socket{border-color:#66dfff}
   .hud{display:flex}
   .body{padding:8px 10px}
   .steps{display:none}
+  #welcome .howto{margin-bottom:8px}
+  .stagecard p{margin:8px 0 6px;font-size:12px}
   .intercept-grid{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr);gap:10px;align-items:start}
   .intercept-side{display:flex;flex-direction:column}
   #intercept .actions>button{flex:1;padding:8px}
@@ -381,11 +440,41 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
       <div class="body">
         <div class="steps"><span id="s1" class="active"><span class="stepnum">01</span> INTERCEPT</span><span id="s2"><span class="stepnum">02</span> DECODE</span></div>
         <div id="welcome">
-          <div class="target brief"><div><div class="eyebrow">Mission brief</div><p>Recover the terminal access key.</p></div><span class="pattern"><svg class="glyph" aria-hidden="true" focusable="false"><use href="#g-bolt"/></svg></span></div>
-          <p>Capture <b>three code blocks</b> that exactly match the reference from a continuously looping stream. Each capture decrypts a clue about the hidden glyph sequence.</p>
-          <p>Then decode the key in <b>five submissions</b>. Glyphs never repeat. Wrong blocks, magenta security probes and rejected keys raise trace. 100% trace locks the terminal.</p>
-          <p class="hint">No countdown. Missed blocks loop back. Pause hides the terminal. Keys: 1–6, Enter, Backspace, ←/→, P or Esc to pause.</p>
+          <div class="target brief"><div><div class="eyebrow">Mission brief</div><p>Recover the terminal access key in two stages.</p></div><svg class="emblem" aria-hidden="true" focusable="false"><use href="#emblem-open"/></svg></div>
           <button class="primary wide" id="start">Connect to terminal →</button>
+          <div class="howto">
+            <section class="stagecard" aria-labelledby="howto1">
+              <h3 id="howto1"><span class="stepnum">01</span> Intercept</h3>
+              <!-- Mini diagram: the reference and a three-lane stream with its exact match lit and one probe. -->
+              <div class="mini-intercept" aria-hidden="true">
+                <div class="mini-ref"><i style="--w:86%"></i><i style="--w:60%;--x:14%"></i><i style="--w:72%"></i></div>
+                <div class="mini-stream">
+                  <div class="mini-block"><i style="--w:70%"></i><i style="--w:86%;--x:14%"></i><i style="--w:56%"></i></div>
+                  <div class="mini-block match"><i style="--w:86%"></i><i style="--w:60%;--x:14%"></i><i style="--w:72%"></i></div>
+                  <div class="mini-block probe"><i style="--w:80%"></i><i style="--w:50%"></i><i style="--w:66%;--x:14%"></i></div>
+                  <div class="mini-block"><i style="--w:86%"></i><i style="--w:60%;--x:14%"></i><i style="--w:44%"></i></div>
+                  <div class="mini-block"><i style="--w:60%"></i><i style="--w:72%"></i><i style="--w:86%;--x:14%"></i></div>
+                  <div class="mini-block"><i style="--w:86%"></i><i style="--w:40%;--x:14%"></i><i style="--w:72%"></i></div>
+                </div>
+              </div>
+              <p>Tap the block that matches the reference <b>exactly</b> as the stream loops. Three captures decrypt three clues.</p>
+              <ul class="costs"><li class="warn">Wrong +12%</li><li class="warn">Probe +24%</li></ul>
+            </section>
+            <section class="stagecard" aria-labelledby="howto2">
+              <h3 id="howto2"><span class="stepnum">02</span> Decode</h3>
+              <!-- Mini diagram: one lock row showing the three kinds of feedback. -->
+              <div class="mini-lock" aria-hidden="true">
+                <div class="slot exact"><svg class="glyph"><use href="#g-node"/></svg><small>✓</small><i class="led"></i></div>
+                <div class="slot present"><svg class="glyph"><use href="#g-tri"/></svg><small>↔</small><i class="led"></i></div>
+                <div class="slot absent"><svg class="glyph"><use href="#g-wave"/></svg><small>×</small><i class="led"></i></div>
+                <div class="slot exact"><svg class="glyph"><use href="#g-bolt"/></svg><small>✓</small><i class="led"></i></div>
+              </div>
+              <p>Deduce the hidden glyph key from your clues and the lock's feedback. Glyphs never repeat. <b>Five tries.</b></p>
+              <ul class="costs"><li class="ok">✓ Correct</li><li class="gold">↔ Wrong spot</li><li class="warn">Rejected +12%</li></ul>
+            </section>
+          </div>
+          <div class="tracebrief"><span class="bar" aria-hidden="true"><i></i></span><p>Trace builds with every mistake. <b>100% locks the terminal.</b> No countdown: missed blocks loop back.</p></div>
+          <p class="keyhints" aria-label="Keyboard controls"><kbd>1–6</kbd> glyphs <kbd>Enter</kbd> submit <kbd>⌫</kbd> erase <kbd>←</kbd><kbd>→</kbd> slot <kbd>P</kbd> pause · Tab to a block, Enter to capture</p>
         </div>
         <div id="intercept" class="hidden">
           <div class="intercept-grid">
