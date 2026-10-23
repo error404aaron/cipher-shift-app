@@ -126,6 +126,7 @@
 
   function reset() {
     stopMotion();
+    $('confirm').classList.add('hidden');
     clearTimeout(state?.timer);
     clearInterval(state?.revealTimer);
     const mode = $('difficulty').value;
@@ -201,12 +202,16 @@
     }));
   }
   // Diff-style marks: '+' rows on a capture, '−' rows where a rejected block differs from the reference.
+  // One fade timer per block, restarted on each hit, so a repeat hit is never cleared early by the first one.
+  const markTimers = new Map();
   function markLines(id, mode, ms) {
     const ref = state.stream.target.split('\n');
     const code = state.stream.blocks[id].code.split('\n');
     const rows = $('packets').querySelectorAll('.packet[data-id="' + id + '"] .ln');
     rows.forEach((row, k) => row.classList.toggle(mode, mode === 'add' || code[k % 4] !== ref[k % 4]));
-    if (ms) setTimeout(() => rows.forEach((row) => row.classList.remove(mode)), ms);
+    if (!ms) return;
+    clearTimeout(markTimers.get(id));
+    markTimers.set(id, setTimeout(() => rows.forEach((row) => row.classList.remove(mode)), ms));
   }
 
   // Decorative 4-hex signal ID for the reference readout (a simple string hash; not a game rule).
@@ -286,7 +291,7 @@
     $('packets').style.transform = 'translate3d(0,' + (-motion.offset).toFixed(2) + 'px,0)';
   }
   function moving() {
-    return state.phase === 'intercept' && !state.paused && !motion.hold && !reducedMotion.matches && motion.period > 0;
+    return state.phase === 'intercept' && !state.paused && !state.confirming && !motion.hold && !reducedMotion.matches && motion.period > 0;
   }
   function tick(t) {
     // Clamp frame gaps (background tabs, slow frames) so the stream never leaps.
@@ -319,7 +324,7 @@
   }
 
   function select(id) {
-    if (state.phase !== 'intercept' || state.paused) return;
+    if (state.phase !== 'intercept' || state.paused || state.confirming) return;
     const t = now();
     if (t < state.lockUntil) return;
     const block = state.stream.blocks[id];
@@ -530,7 +535,7 @@
   }
 
   function canDecode() {
-    return state.phase === 'decode' && !state.paused;
+    return state.phase === 'decode' && !state.paused && !state.confirming;
   }
 
   function enter(g) {
@@ -697,8 +702,26 @@
     e.currentTarget.disabled = true;
     start();
   };
-  $('restart').onclick = reset;
-  $('difficulty').onchange = reset;
+  // New terminal and difficulty changes ask before discarding a terminal that is in progress.
+  let confirmReturn = null;
+  function askAbandon(trigger) {
+    if (state.phase !== 'intercept' && state.phase !== 'decode') return reset();
+    state.confirming = true;
+    confirmReturn = trigger;
+    $('confirm').classList.remove('hidden');
+    $('confirmNo').focus({ preventScroll: true });
+  }
+  function closeConfirm(abandon) {
+    $('confirm').classList.add('hidden');
+    state.confirming = false;
+    if (abandon) return reset(); // reset() reads the (possibly new) difficulty
+    $('difficulty').value = state.mode;
+    confirmReturn?.focus({ preventScroll: true });
+  }
+  $('restart').onclick = () => askAbandon($('restart'));
+  $('difficulty').onchange = () => askAbandon($('difficulty'));
+  $('confirmYes').onclick = () => closeConfirm(true);
+  $('confirmNo').onclick = () => closeConfirm(false);
   $('refresh').onclick = refresh;
   $('submit').onclick = submit;
   $('erase').onclick = erase;
@@ -755,6 +778,17 @@
   });
 
   document.addEventListener('keydown', (e) => {
+    // While the abandon dialog is open: Escape cancels, Tab stays between its two buttons, nothing else acts.
+    if (state.confirming) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeConfirm(false);
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        (document.activeElement === $('confirmNo') ? $('confirmYes') : $('confirmNo')).focus();
+      }
+      return;
+    }
     if (e.ctrlKey || e.metaKey || e.altKey || e.target.tagName === 'SELECT') return;
     if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
       if (state.paused) {
@@ -811,6 +845,7 @@
   $('grain').onclick = () => setGrain(GRAIN_MODES[(GRAIN_MODES.indexOf(document.documentElement.dataset.grain) + 1) % GRAIN_MODES.length]);
 
   reset();
-  // Read-only hook for automated browser checks.
-  window.CipherShiftDebug = { get state() { return state; }, motion };
+  // Read-only hook for automated browser checks. It exposes the hidden key, so it only exists when the
+  // page is opened with ?debug (the test suites do this); normal play never has it.
+  if (new URLSearchParams(location.search).has('debug')) window.CipherShiftDebug = { get state() { return state; }, motion };
 })();

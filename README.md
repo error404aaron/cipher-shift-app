@@ -4,4 +4,4 @@ Play: https://error404aaron.github.io/cipher-shift-app/
 
 Static build of CIPHER SHIFT, a fictional sci-fi codebreaking game that runs entirely in the browser (no backend, no accounts; wins are stored in local browser storage only).
 
-This repository holds only the published files. They are copied unchanged from `dist/` of the source repository at release commit `b6bcd95e0ad30b2b0d4d29ddb9c33b0218ed8dca`.
+This repository holds only the published files. They are copied unchanged from `dist/` of the source repository at release commit `dfb090fbea9f49e8c4e8b15aa108365be9ba7497`.
