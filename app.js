@@ -65,9 +65,40 @@
     name.textContent = glyphName(g);
     return [glyphIcon(g), name];
   }
-  // Clue text starts with the glyph character; swap it for the icon.
-  function clueNodes(c) {
-    return [...glyphLabel(c.glyph), L.clueText(c).slice(c.glyph.length)];
+  // Clue text starts with the glyph character; swap it for the icon. With `decrypt`, the text resolves
+  // out of cipher noise; screen readers get the final text at once from a hidden copy.
+  function clueNodes(c, decrypt = false) {
+    const text = L.clueText(c).slice(c.glyph.length);
+    if (!decrypt || reducedMotion.matches) return [...glyphLabel(c.glyph), text];
+    const shown = document.createElement('span');
+    shown.setAttribute('aria-hidden', 'true');
+    const spoken = document.createElement('span');
+    spoken.className = 'sr-only';
+    spoken.textContent = text;
+    decryptText(shown, text);
+    return [...glyphLabel(c.glyph), shown, spoken];
+  }
+  const NOISE = '░▒▓<>/\\|=+*#%01';
+  function decryptText(el, text, ms = 520) {
+    const term = state;
+    const t0 = now();
+    el.classList.add('decrypting');
+    const step = () => {
+      if (state !== term) return;
+      const p = Math.min(1, (now() - t0) / ms);
+      const done = Math.floor(text.length * p);
+      el.textContent = text.slice(0, done) + [...text.slice(done)].map((ch) => (ch === ' ' ? ' ' : NOISE[(Math.random() * NOISE.length) | 0])).join('');
+      if (p < 1) requestAnimationFrame(step);
+      else el.classList.remove('decrypting');
+    };
+    step();
+  }
+
+  // Replays a one-shot CSS animation class.
+  function pulse(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
   }
 
   function setTrace(value) {
@@ -78,15 +109,14 @@
     $('traceBar').style.width = pct;
     $('hudBar').style.width = pct;
     $('traceMeter').setAttribute('aria-valuenow', state.trace);
+    // Escalation: the meter pulses from 50%, the console tints at 75% and alarms at 90%.
+    document.body.dataset.trace = state.trace >= 90 ? 'critical' : state.trace >= 75 ? 'high' : state.trace >= 50 ? 'warn' : '';
   }
   // Returns true when the added trace triggered a lockdown.
   function addTrace(amount, reason) {
     setTrace(state.trace + amount);
-    for (const el of [$('traceNumber'), $('hudTrace')]) {
-      el.classList.remove('hot');
-      void el.offsetWidth;
-      el.classList.add('hot');
-    }
+    for (const el of [$('traceNumber'), $('hudTrace')]) pulse(el, 'hot');
+    pulse($('console'), 'hit');
     if (state.trace >= L.TRACE.lockdown) {
       finish(false, reason || 'Security isolated the connection.');
       return true;
@@ -143,7 +173,7 @@
     $('captured').textContent = state.captures + ' / ' + L.CAPTURES_NEEDED + ' captured';
     $('dots').replaceChildren(...Array.from({ length: L.CAPTURES_NEEDED }, (_, i) => {
       const d = document.createElement('i');
-      if (i < state.captures) d.className = 'on';
+      if (i < state.captures) d.className = i === state.captures - 1 ? 'on pop' : 'on';
       return d;
     }));
   }
@@ -302,8 +332,8 @@
     $('packets').querySelectorAll('.packet[data-id="' + id + '"]').forEach((el) => el.classList.add('captured'));
     markLines(id, 'add');
     renderCaptures();
-    renderClues();
-    hint('interceptHint', ['Fragment captured. Clue ' + state.captures + ': ', ...clueNodes(state.clues[state.captures - 1])]);
+    renderClues(true);
+    hint('interceptHint', ['Fragment captured. Clue ' + state.captures + ': ', ...clueNodes(state.clues[state.captures - 1], true)]);
     log('Fragment ' + state.captures + ' captured. Clue decrypted.');
     const term = state;
     state.timer = setTimeout(() => {
@@ -321,14 +351,15 @@
     log('Stream refreshed.');
   }
 
-  function renderClues() {
+  // `decryptNewest` animates the clue that was just captured.
+  function renderClues(decryptNewest = false) {
     const shown = state.clues.slice(0, state.captures);
     const items = () => shown.map((c, i) => {
       const d = document.createElement('div');
       d.className = 'clue';
       const n = document.createElement('b');
       n.textContent = String(i + 1).padStart(2, '0');
-      d.append(n, ...clueNodes(c));
+      d.append(n, ...clueNodes(c, decryptNewest && i === shown.length - 1));
       return d;
     });
     const empty = () => {
@@ -358,7 +389,25 @@
     hint('decodeHint', 'Choose a slot, then tap a glyph. Use your intercepted clues.');
     showCurrent();
     focusConsole();
+    powerOnDecode();
     log('Cipher layer exposed. Five submissions.');
+  }
+
+  // Handoff from intercept: a band sweeps the panel while the lock rows and keys power on in sequence.
+  // Purely visual (pointer-events: none) so input is never blocked; skipped with reduced motion.
+  function powerOnDecode() {
+    if (reducedMotion.matches) return;
+    const term = state;
+    const band = document.createElement('div');
+    band.className = 'layerflash';
+    band.setAttribute('aria-hidden', 'true');
+    band.textContent = 'CIPHER LAYER EXPOSED';
+    $('console').append(band);
+    $('decode').classList.add('entering');
+    setTimeout(() => {
+      band.remove();
+      if (state === term) $('decode').classList.remove('entering');
+    }, 1300);
   }
 
   // Controls are built once per terminal and updated in place so keyboard focus is never lost.
@@ -381,6 +430,7 @@
       const led = document.createElement('i');
       led.className = 'led';
       b.append(n, glyphIcon(g), led);
+      b.style.setProperty('--i', i);
       return b;
     }));
   }
@@ -419,13 +469,14 @@
     while (rows.children.length < state.history.length) {
       const r = state.history[rows.children.length];
       const row = document.createElement('div');
-      row.className = 'row';
+      row.className = 'row fresh'; // sockets settle and LEDs light one by one
       row.dataset.n = rowNumber(rows.children.length);
       row.setAttribute('role', 'img');
       row.setAttribute('aria-label', 'Submission ' + (rows.children.length + 1) + ': ' + r.guess.map((g, i) => glyphName(g) + ' ' + words[r.marks[i]]).join(', '));
       r.guess.forEach((g, i) => {
         const s = document.createElement('div');
         s.className = 'slot ' + r.marks[i];
+        s.style.setProperty('--i', i);
         const mark = document.createElement('small');
         mark.textContent = labels[r.marks[i]];
         s.append(glyphIcon(g), mark, led());
@@ -442,6 +493,7 @@
       const row = document.createElement('div');
       row.className = 'row';
       row.dataset.n = rowNumber(state.attempt + 1 + k);
+      row.style.setProperty('--i', k + 1);
       for (let i = 0; i < state.n; i++) {
         const s = document.createElement('div');
         s.className = 'slot';

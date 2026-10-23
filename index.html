@@ -309,7 +309,38 @@ button.slot.selected .socket{border-color:#66dfff}
   .key{min-height:46px}
 }
 
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}.packet.rejected{background:#5a1d45;border-color:var(--alert)}}
+/* Feedback and transitions. Every animation here ends in the element's normal state, so the
+   reduced-motion rule below (animation:none) leaves a correct static screen. */
+.decrypting{color:#5cdcff;font-family:var(--mono)}
+.dots i.pop{animation:dotpop .45s ease-out}
+@keyframes dotpop{0%{transform:rotate(45deg) scale(1.9);box-shadow:0 0 18px #5cdcff}}
+/* Trace escalation: meter pulses from 50%, console tints at 75%, alarm pulse at 90% */
+body[data-trace="warn"] .bar i,body[data-trace="high"] .bar i{animation:meter 1.6s ease-in-out infinite}
+body[data-trace="critical"] .bar i{animation:meter .7s ease-in-out infinite}
+@keyframes meter{50%{filter:brightness(1.6);box-shadow:0 0 22px #f14dc1}}
+body[data-trace="high"] #console,body[data-trace="critical"] #console{border-color:#7a3a62;box-shadow:inset 0 1px #7585ad40,0 6px 0 #030610,0 0 26px #f14dc130}
+body[data-trace="critical"] #console{border-color:#c2467f;animation:critical 1.4s ease-in-out infinite}
+@keyframes critical{50%{box-shadow:inset 0 1px #7585ad40,0 6px 0 #030610,0 0 36px #f14dc170}}
+body[data-trace="high"] .hud,body[data-trace="critical"] .hud{color:#ff6fae}
+body[data-trace="critical"] .hud:after{content:'CRITICAL';font-size:8px;letter-spacing:1px;padding:2px 4px;border:1px solid #fa57a2;color:#ff9bcf}
+body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-trace .eyebrow{color:#ff8abf}
+/* Each trace hit flashes the console frame */
+#console.hit:after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;border:2px solid #fa57a2;box-shadow:inset 0 0 30px #f14dc150;animation:hitflash .4s ease-out both}
+@keyframes hitflash{from{opacity:1}to{opacity:0}}
+/* Intercept -> decode handoff */
+.layerflash{position:absolute;left:0;right:0;top:38%;height:58px;z-index:5;display:grid;place-items:center;pointer-events:none;font:600 12px var(--mono);letter-spacing:4px;color:#bff3ff;text-shadow:0 0 12px #2ca8ff;background:linear-gradient(90deg,transparent,#0b2a5aee 20%,#0b2a5aee 80%,transparent);border-top:1px solid #5cdcff80;border-bottom:1px solid #5cdcff80;animation:layerflash 1.2s ease-out both}
+@keyframes layerflash{0%{opacity:0;transform:scaleX(.2)}15%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0}}
+#decode.entering .lockboard .row{animation:rowin .32s ease-out both;animation-delay:calc(var(--i,0) * 70ms + 150ms)}
+#decode.entering .key{animation:keyin .3s ease-out both;animation-delay:calc(var(--i,0) * 45ms + 300ms)}
+@keyframes rowin{from{opacity:0;transform:translateY(6px)}}
+@keyframes keyin{from{opacity:0;transform:translateY(5px) scale(.94);filter:brightness(2)}}
+/* A new submission row: sockets settle and LEDs light one by one */
+.row.fresh .slot{animation:socketin .26s ease-out both;animation-delay:calc(var(--i,0) * 90ms)}
+.row.fresh .slot .led{animation:ledon .32s steps(2) both;animation-delay:calc(var(--i,0) * 90ms + 140ms)}
+@keyframes socketin{from{transform:scale(.9);filter:brightness(1.8)}}
+@keyframes ledon{from{background:#16223f;box-shadow:none}}
+
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}.packet.rejected{background:#5a1d45;border-color:var(--alert)}#console.hit:after{display:none}}
 </style>
 </head>
 <body>
