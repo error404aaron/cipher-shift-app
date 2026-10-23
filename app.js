@@ -97,6 +97,7 @@
   function reset() {
     stopMotion();
     clearTimeout(state?.timer);
+    clearInterval(state?.revealTimer);
     const mode = $('difficulty').value;
     const cfg = L.DIFFICULTY[mode] ?? L.DIFFICULTY.standard;
     state = { mode, cfg, n: cfg.n, trace: 0, captures: 0, attempt: 0, guess: [], history: [], phase: 'welcome', paused: false, selected: 0, lockUntil: 0, timer: 0 };
@@ -519,7 +520,7 @@
     }
     if (addTrace(state.cfg.submitTrace, 'Rejected keys pushed trace to 100%. Security isolated the connection.')) return;
     if (state.attempt >= L.MAX_SUBMISSIONS) {
-      finish(false, 'Submission limit reached. The terminal locked you out.');
+      finish(false, 'Submission limit reached. The terminal locked you out.', 'limit');
       return;
     }
     const exact = marks.filter((m) => m === 'exact').length;
@@ -551,40 +552,80 @@
     log('Connection resumed.');
   }
 
-  function finish(win, msg) {
+  function storedWins(add) {
+    try {
+      const wins = Number(localStorage.getItem('cipherShiftWins') || 0) + add;
+      if (add) localStorage.setItem('cipherShiftWins', wins);
+      return wins;
+    } catch {
+      return null;
+    }
+  }
+
+  // The key decrypts slot by slot: each socket cycles random glyphs before settling (instant with reduced motion).
+  function revealKey(sockets, settledClass) {
+    const term = state;
+    const settle = (s, i) => {
+      s.className = 'slot ' + settledClass;
+      s.querySelector('use').setAttribute('href', '#g-' + GLYPH_ART[state.secret[i]][0]);
+    };
+    if (reducedMotion.matches) return sockets.forEach(settle);
+    let tick = 0;
+    clearInterval(state.revealTimer);
+    state.revealTimer = setInterval(() => {
+      if (state !== term) return;
+      tick++;
+      sockets.forEach((s, i) => {
+        if (s.classList.contains(settledClass)) return;
+        if (tick >= 5 + i * 3) settle(s, i);
+        else s.querySelector('use').setAttribute('href', '#g-' + GLYPH_ART[L.GLYPHS[(tick + i * 2) % L.GLYPHS.length]][0]);
+      });
+      if (sockets.every((s) => s.classList.contains(settledClass))) clearInterval(state.revealTimer);
+    }, 70);
+  }
+
+  // kind: 'win', 'trace' (trace hit 100%) or 'limit' (submissions used up).
+  function finish(win, msg, kind = win ? 'win' : 'trace') {
     clearTimeout(state.timer);
     state.phase = 'result';
     state.paused = false;
     state.lockUntil = Infinity;
     stopMotion();
-    let wins = null;
-    if (win) {
-      try {
-        wins = Number(localStorage.getItem('cipherShiftWins') || 0) + 1;
-        localStorage.setItem('cipherShiftWins', wins);
-      } catch {
-        wins = null;
-      }
-    }
+    const wins = storedWins(win ? 1 : 0);
+    const copy = {
+      win: ['TERMINAL COMPROMISED', 'You’re through.', 'Access granted'],
+      trace: ['SECURITY LOCKDOWN', 'Signal traced.', 'Connection lost'],
+      limit: ['TERMINAL LOCKED', 'Locked out.', 'Connection lost'],
+    }[kind];
     const box = $('result');
-    box.className = 'result' + (win ? '' : ' lost');
-    box.innerHTML = '<div class="eyebrow"></div><div class="icon"></div><h2></h2><p class="msg"></p><div class="pattern"></div><p class="mono stats"></p><button class="primary" id="again">Connect to next terminal →</button>';
-    box.querySelector('.eyebrow').textContent = win ? 'TERMINAL COMPROMISED' : 'SECURITY LOCKDOWN';
-    const icon = glyphIcon('⌁');
-    if (!win) icon.firstChild.setAttribute('href', '#g-lockdown');
-    box.querySelector('.icon').replaceChildren(icon);
-    box.querySelector('h2').textContent = win ? 'You’re through.' : 'Signal lost.';
+    box.className = 'result ' + (win ? 'won' : 'lost');
+    box.innerHTML = '<div class="eyebrow"></div><div class="emblemwrap"><svg class="emblem" aria-hidden="true" focusable="false"><use/></svg></div><h2></h2><p class="msg"></p>'
+      + '<div class="keyreadout"><span class="label"></span><div class="sockets" role="img"></div></div>'
+      + '<dl class="readout"><div><dt>TRACE</dt><dd class="trace"></dd></div><div><dt>SUBMISSIONS</dt><dd class="subs"></dd></div><div><dt>WINS HERE</dt><dd class="wins"></dd></div></dl>'
+      + '<button class="primary" id="again">Connect to next terminal →</button>';
+    box.querySelector('.eyebrow').textContent = copy[0];
+    box.querySelector('.emblem use').setAttribute('href', win ? '#emblem-open' : '#emblem-sealed');
+    box.querySelector('h2').textContent = copy[1];
     box.querySelector('.msg').textContent = msg;
-    box.querySelector('.pattern').replaceChildren(...state.secret.map(glyphIcon));
-    box.querySelector('.pattern').setAttribute('role', 'img');
-    box.querySelector('.pattern').setAttribute('aria-label', 'Access key: ' + state.secret.map(glyphName).join(', '));
-    box.querySelector('.stats').textContent = 'TRACE ' + state.trace + '% · ' + state.attempt + ' SUBMISSIONS' + (wins ? ' · ' + wins + ' WINS ON THIS BROWSER' : '');
+    box.querySelector('.keyreadout .label').textContent = win ? 'ACCESS KEY · VERIFIED' : 'ACCESS KEY · REVEALED';
+    const sockets = state.secret.map((g) => {
+      const s = document.createElement('div');
+      s.className = 'slot scrambling';
+      s.append(glyphIcon(g), led());
+      return s;
+    });
+    box.querySelector('.sockets').replaceChildren(...sockets);
+    box.querySelector('.sockets').setAttribute('aria-label', 'Access key: ' + state.secret.map(glyphName).join(', '));
+    box.querySelector('.trace').textContent = state.trace + '%';
+    box.querySelector('.subs').textContent = state.attempt + ' / ' + L.MAX_SUBMISSIONS;
+    box.querySelector('.wins').textContent = wins ?? '—';
+    revealKey(sockets, win ? 'exact' : 'revealed');
     $('again').onclick = (e) => {
       e.currentTarget.disabled = true;
       reset();
       start();
     };
-    $('phase').textContent = win ? 'Access granted' : 'Connection lost';
+    $('phase').textContent = copy[2];
     show('result');
     $('again').focus({ preventScroll: true });
     log(win ? 'Archive recovered. Connection closed.' : 'Session terminated. Access key revealed.');

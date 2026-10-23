@@ -197,12 +197,35 @@ button.slot.selected .socket{border-color:#66dfff}
 .log div{margin-bottom:6px}.log span{color:#ec77c4}
 
 /* Pause and results */
-.result{text-align:center;padding:40px 18px}
-.result .icon{font-size:56px;color:#60cfff;text-shadow:0 0 25px #1689ff}
-.result.lost .icon{color:var(--alert);text-shadow:0 0 25px #f14dc1}
-.result h2{font-size:30px;margin:14px 0 5px}
-.result p{max-width:420px;margin:12px auto 22px}
-.result .pattern{margin:6px 0 12px;font-size:30px;letter-spacing:0}
+.result{position:relative;text-align:center;padding:34px 18px}
+.result .icon{font-size:56px;color:#60cfff;filter:drop-shadow(0 0 14px #1689ff)}
+.result h2{font-size:30px;margin:10px 0 5px}
+.result p{max-width:420px;margin:10px auto 18px}
+/* Win / lockdown: emblem, decrypting key readout, stat tiles */
+.emblemwrap{position:relative;width:128px;height:128px;margin:14px auto 4px}
+.emblem{display:block;width:100%;height:100%}
+.won .emblem{filter:drop-shadow(0 0 16px #1689ff80)}
+.lost .emblem{filter:drop-shadow(0 0 16px #f14dc170)}
+.won .emblemwrap:after{content:'';position:absolute;left:8%;right:8%;top:0;height:30%;background:linear-gradient(transparent,#8ceaff38,transparent);opacity:0;animation:sweep 1.1s ease-out .15s 1 both}
+@keyframes sweep{20%,75%{opacity:1}to{opacity:0;transform:translateY(233%)}}
+.result.lost{background:repeating-linear-gradient(135deg,#ff3d9a0b 0 14px,transparent 14px 28px)}
+.result.lost:before{content:'';position:absolute;inset:0;border:2px solid #fa57a2;box-shadow:inset 0 0 40px #f14dc140;pointer-events:none;opacity:0;animation:alarmframe .9s steps(2) 3}
+@keyframes alarmframe{50%{opacity:1}}
+.result.lost .eyebrow{color:#ff8abf}
+.result.lost h2{color:#ffd6ec}
+.keyreadout{display:inline-grid;justify-items:center;gap:8px;margin:6px auto 4px;padding:10px 14px 12px;background:#040918;border:2px solid #34466e;border-top-color:#0a1022;border-left-color:#0a1022;border-radius:4px;box-shadow:inset 0 0 26px #071f4d,inset 0 2px 8px #000}
+.keyreadout .label{font:500 10px var(--mono);letter-spacing:2px;color:#7b98c4}
+.sockets{display:flex;gap:7px}
+.slot.scrambling{color:#4b6a9c}
+.slot.scrambling .glyph{filter:none}
+.slot.revealed{border-color:#7a3a62;color:#ff9bcf}
+.slot.revealed .glyph{filter:drop-shadow(0 0 3px #d62b8670)}
+.slot.revealed .led{background:#fa57a2;box-shadow:0 0 8px #f14dc1}
+.readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:400px;margin:14px auto 22px;padding:0}
+.readout div{padding:8px 6px;background:#0a1430;border:1px solid #23406e;border-radius:3px;box-shadow:inset 0 1px #3d85d820}
+.readout dt{font:500 9px var(--mono);letter-spacing:1.5px;color:#7b98c4;white-space:nowrap}
+.readout dd{margin:4px 0 0;font:600 18px var(--mono);color:#e3efff;white-space:nowrap}
+.lost .readout .trace{color:#ff8abf}
 
 /* Phones (portrait) */
 @media(max-width:760px){
@@ -298,7 +321,18 @@ button.slot.selected .socket{border-color:#66dfff}
   <symbol id="g-node" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6v16.8M3.6 12h16.8"/></symbol>
   <symbol id="g-wave" viewBox="0 0 24 24"><path d="M2.6 6.8c2-2.6 4.2-2.6 6.2 0s4.2 2.6 6.2 0 4.2-2.6 6.2 0M2.6 12c2-2.6 4.2-2.6 6.2 0s4.2 2.6 6.2 0 4.2-2.6 6.2 0M2.6 17.2c2-2.6 4.2-2.6 6.2 0s4.2 2.6 6.2 0 4.2-2.6 6.2 0"/></symbol>
   <symbol id="g-bolt" viewBox="0 0 24 24"><path d="M2.6 17 9 10.6l4.4 4.4 7.8-7.8M15.6 7.2h5.6v5.6"/></symbol>
-  <symbol id="g-lockdown" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M8 8l8 8M16 8l-8 8"/></symbol>
+  <symbol id="g-pause" viewBox="0 0 24 24"><path d="M8.5 5v14M15.5 5v14"/></symbol>
+  <!-- Result emblems, after the app icon: the cracked frame (win) and the sealed frame (lockdown). -->
+  <symbol id="emblem-open" viewBox="0 0 120 120">
+    <path d="M106 53V28L92 14H28L14 28V92L28 106H92L106 92V67" fill="#040917" stroke="#5a7cb8" stroke-width="6"/>
+    <g fill="#5cdcff"><rect x="25" y="27" width="20" height="7" rx="1.5"/><rect x="30" y="41" width="15" height="7" rx="1.5"/><rect x="25" y="56" width="16" height="7" rx="1.5"/><rect x="30" y="71" width="13" height="7" rx="1.5"/><rect x="25" y="85" width="20" height="7" rx="1.5"/><rect x="51" y="27" width="15" height="7" rx="1.5"/><rect x="51" y="41" width="20" height="7" rx="1.5"/><rect x="55" y="71" width="12" height="7" rx="1.5"/><rect x="51" y="85" width="17" height="7" rx="1.5"/><rect x="77" y="27" width="18" height="7" rx="1.5"/><rect x="81" y="41" width="13" height="7" rx="1.5"/><rect x="81" y="71" width="15" height="7" rx="1.5"/><rect x="77" y="85" width="12" height="7" rx="1.5"/></g>
+    <rect x="51" y="55" width="65" height="9" rx="1.5" fill="#ff4fb3"/>
+  </symbol>
+  <symbol id="emblem-sealed" viewBox="0 0 120 120">
+    <path d="M28 14H92L106 28V92L92 106H28L14 92V28Z" fill="#0b0716" stroke="#fa57a2" stroke-width="6"/>
+    <g fill="#2b3858"><rect x="25" y="27" width="20" height="7" rx="1.5"/><rect x="30" y="41" width="15" height="7" rx="1.5"/><rect x="25" y="56" width="16" height="7" rx="1.5"/><rect x="30" y="71" width="13" height="7" rx="1.5"/><rect x="25" y="85" width="20" height="7" rx="1.5"/><rect x="51" y="27" width="15" height="7" rx="1.5"/><rect x="51" y="41" width="20" height="7" rx="1.5"/><rect x="51" y="56" width="18" height="7" rx="1.5"/><rect x="55" y="71" width="12" height="7" rx="1.5"/><rect x="51" y="85" width="17" height="7" rx="1.5"/><rect x="77" y="27" width="18" height="7" rx="1.5"/><rect x="81" y="41" width="13" height="7" rx="1.5"/><rect x="77" y="56" width="16" height="7" rx="1.5"/><rect x="81" y="71" width="15" height="7" rx="1.5"/><rect x="77" y="85" width="12" height="7" rx="1.5"/></g>
+    <path d="M33 33 87 87M87 33 33 87" stroke="#ff4fb3" stroke-width="8" stroke-linecap="square"/>
+  </symbol>
 </svg>
 <header><div class="brand">CIPHER<span>//</span>SHIFT</div><span class="pill"><i></i>PORTABLE SLICER / CS–07</span></header>
 <main>
@@ -355,7 +389,7 @@ button.slot.selected .socket{border-color:#66dfff}
           <p class="hint" id="decodeHint" aria-live="polite">Choose a slot, then tap a glyph. Use your intercepted clues.</p>
           <div class="actions"><button class="primary" id="submit">Submit key →</button><button class="subtle" id="erase">Erase</button><button class="subtle pause">Pause</button></div>
         </div>
-        <div id="paused" class="hidden result"><div class="icon">Ⅱ</div><h2>Signal suspended.</h2><p>Your progress is held. The terminal stays hidden while paused.</p><button class="primary" id="resume">Resume connection</button></div>
+        <div id="paused" class="hidden result"><div class="icon"><svg class="glyph" aria-hidden="true" focusable="false"><use href="#g-pause"/></svg></div><h2>Signal suspended.</h2><p>Your progress is held. The terminal stays hidden while paused.</p><button class="primary" id="resume">Resume connection</button></div>
         <div id="result" class="hidden result" aria-live="polite"></div>
       </div>
     </section>
