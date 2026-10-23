@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a17">
+<title>Cipher Shift — signal intrusion</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* Portable slicer: charcoal alloy, dark navy, blue/cyan phosphor, magenta security indicators. */
+:root{color-scheme:dark;--bg:#080a17;--panel:#101323;--line:#303b58;--ink:#e3efff;--muted:#92a6c9;--cyan:#5cdcff;--blue:#2e93ff;--magenta:#fa78c7;--alert:#ff6fae;--mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;--gutter:24px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;background-color:var(--bg);background-image:radial-gradient(ellipse at 12% 0%,#164bd844,transparent 50%),radial-gradient(ellipse at 100% 60%,#a52e8f22,transparent 55%),linear-gradient(135deg,#121827 0%,#070a14 65%);background-attachment:fixed;background-repeat:no-repeat;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button,select{font:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:focus-visible,select:focus-visible{outline:2px solid var(--magenta);outline-offset:3px}
+button:disabled{opacity:.4;cursor:default}
+p{line-height:1.6;margin:8px 0;color:var(--muted)}
+.hidden{display:none!important}
+.mono,.eyebrow,small{font-family:var(--mono)}
+.eyebrow{font-size:11px;letter-spacing:2px;color:#64d8ff;text-transform:uppercase}
+.muted{color:var(--muted)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Device shell */
+header{max-width:1160px;margin:16px auto 0;padding:22px var(--gutter);display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(180deg,#282d41,#111522);border:1px solid #46516e;border-bottom:3px solid #090c16;border-radius:8px 8px 0 0;box-shadow:inset 0 1px #8393ad40,0 10px 35px #0008;position:relative}
+header:before,header:after{content:'+';position:absolute;bottom:4px;font:12px monospace;color:#728099}header:before{left:7px}header:after{right:7px}
+.brand{font-family:var(--mono);font-weight:700;letter-spacing:3px;text-shadow:0 0 18px #218dff80}.brand span{color:#367dff}
+.pill{font-size:11px;padding:8px 12px;border:1px solid #355483;border-radius:3px;background:#070c1b;box-shadow:inset 0 0 12px #1968ff20;color:#73ddff;letter-spacing:1px;white-space:nowrap}
+.pill i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#3cf;box-shadow:0 0 8px #3cf;margin-right:6px;vertical-align:1px}
+main{max-width:1160px;margin:0 auto;padding:30px var(--gutter) var(--gutter);border:1px solid #30394d;border-top:0;background:linear-gradient(110deg,#181d2bcc,#0b0e1bde);box-shadow:inset 5px 0 0 #030711,inset -5px 0 0 #030711,0 20px 70px #0008}
+.intro{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #33405d;position:relative}
+.intro:after{content:'';position:absolute;bottom:-2px;left:0;width:100px;height:3px;background:#2589ff;box-shadow:0 0 14px #208cff}
+h1{font-size:clamp(28px,4vw,42px);font-weight:600;letter-spacing:-1px;line-height:1.1;margin:8px 0;color:#e6f1ff;text-shadow:0 0 28px #467eff30}
+.intro p{font-size:13px}
+.settings{display:flex;gap:8px}
+/* While a terminal is live the briefing copy collapses so the console fits the screen */
+body.playing .introcopy{display:none}body.playing .intro{justify-content:flex-end;margin-bottom:16px;padding-bottom:14px}
+footer{max-width:1160px;margin:20px auto;padding:15px var(--gutter);display:flex;justify-content:space-between;gap:15px;font:10px var(--mono);letter-spacing:1px;color:#7c95be;border-top:1px solid #303e5e}
+
+/* Beveled controls */
+select,.subtle{min-height:44px;padding:10px 12px;background:linear-gradient(#2b3146,#171e31);border:1px solid #52607e;border-bottom:3px solid #080e1c;border-radius:3px;color:#b8d3f2;font-family:var(--mono);font-size:11px;box-shadow:inset 0 1px #b7d4ff14}
+select option{background:#141c30;color:var(--ink)}
+.primary{min-height:46px;padding:13px 22px;background:linear-gradient(#9beeff,#38a2f5);border:1px solid #b6f6ff;border-bottom:3px solid #14588a;border-radius:3px;color:#06132b;font:600 12px var(--mono);text-transform:uppercase;letter-spacing:1px;box-shadow:0 0 16px #1f8fff35,inset 0 1px #fff8}
+.subtle:active,.primary:active,.key:active{transform:translateY(1px);border-bottom-width:2px}
+.wide{width:100%}
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+@media(hover:hover){.primary:hover{filter:brightness(1.12)}.subtle:hover{border-color:#4aa8f0}}
+
+/* Panels */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;align-items:start}
+.panel{border:2px solid #343d55;border-radius:6px;background:linear-gradient(135deg,#151a2c,#0d1120);box-shadow:inset 0 1px #7585ad40,0 6px 0 #030610,0 12px 25px #0005;overflow:hidden;position:relative}
+.panelhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 20px;background:linear-gradient(#252b40,#161d31);border-bottom:2px solid #050a18;box-shadow:0 1px #465372}
+.panelhead h2{margin:0;font:500 12px var(--mono);letter-spacing:2px;text-transform:uppercase}
+.panelhead .eyebrow{font-size:9px;letter-spacing:1px;background:#080f23;padding:6px 8px;border:1px solid #25467c;white-space:nowrap}
+.body{padding:20px}
+.steps{display:flex;gap:20px;margin-bottom:16px;font:10px var(--mono);color:var(--muted)}
+.steps .active{color:#85e5ff;text-shadow:0 0 10px #258bff}
+.stepnum{border:1px solid #3c608d;background:#0b1428;padding:3px 6px;margin-right:6px}
+.active .stepnum{background:#15396b;border-color:#4bc8ff;box-shadow:0 0 10px #178dff50}
+.hint{font-size:12px;color:#99acd0;margin-top:12px;min-height:2.6em}
+.hint.warn{color:#ff9bcf}
+
+/* Trace meter (sidebar) and compact HUD (narrow screens) */
+.statusline{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:10px}
+.bar{height:12px;border:2px solid #070d1e;border-radius:2px;background:repeating-linear-gradient(90deg,#182340 0 8px,#0c142b 8px 10px);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#fb77c8 0 8px,#7b2e70 8px 10px);box-shadow:0 0 14px #f14dc1;transition:width .3s}
+.hud{display:none;align-items:center;gap:7px;font:600 10px var(--mono);color:#ff9bcf;letter-spacing:1px}
+.hud .bar{width:64px;height:9px;border-width:1px}
+.hot{animation:alarm .5s steps(2) 2}
+@keyframes alarm{50%{filter:brightness(1.8)}}
+
+/* Briefing */
+.target{background:linear-gradient(100deg,#0b1b3d,#080f24);border:1px solid #315695;border-left:4px solid var(--blue);border-radius:3px;box-shadow:inset 0 0 24px #00378b40,0 0 12px #0968d51c;padding:14px 16px;margin-bottom:14px}
+.target .eyebrow{color:#76adf5;font-size:9px}
+.target p{color:#b3d3f8}
+.brief{display:flex;align-items:center;justify-content:space-between}
+.pattern{font:600 24px var(--mono);letter-spacing:5px;color:#6cdfff;text-shadow:0 0 14px #1689ff}
+
+/* Intercept: reference block beside its label, three-lane looping stream below */
+.intercept-grid{display:flex;flex-direction:column}.intercept-side{display:contents}.stream{order:1}#interceptHint{order:2}#intercept .actions{order:3}
+.reference{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 16px}
+.reference .eyebrow{display:block;margin-bottom:6px}
+#captured{display:block;font-size:12px;color:#b3d3f8}
+.dots{display:flex;gap:6px;margin-top:8px}
+.dots i{width:12px;height:12px;border:1px solid #3c608d;background:#0b1428;transform:rotate(45deg)}
+.dots i.on{background:#5cdcff;border-color:#bff3ff;box-shadow:0 0 8px #2ca8ff}
+#target{margin:0;font:500 15px/1.55 var(--mono);white-space:pre;min-width:16ch;color:#8ceaff;text-shadow:0 0 9px #129eff70;padding:8px 12px;background:#040a1b;border:1px solid #23406e;border-radius:2px}
+.stream{position:relative;height:400px;overflow:hidden;padding:0 8px;background:#040a1b;border:2px solid #3e527b;border-top-color:#080e22;border-left-color:#080e22;border-radius:3px;box-shadow:inset 0 0 40px #071f4d,inset 0 0 8px #000;overscroll-behavior:contain}
+.stream:after{content:'';pointer-events:none;position:absolute;inset:0;z-index:2;background:repeating-linear-gradient(0deg,transparent 0 3px,#77baff07 3px 4px);box-shadow:inset 0 22px 25px -20px #020715,inset 0 -22px 25px -20px #020715}
+.stream.held{border-color:#4bc8ff}
+.stream.manual{overflow-y:auto}
+.track{position:relative;will-change:transform}
+.stream.manual .track{will-change:auto}
+.streamgroup{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:5px 0}
+.packet{min-width:0;container-type:inline-size;text-align:left;padding:10px 10px 12px;color:#98b8bb;background:linear-gradient(110deg,#10214a,#0a1734);border:1px solid #264b82;border-left:2px solid #2678dc;border-radius:2px;box-shadow:inset 0 1px #3d85d820;transition:background .15s,border-color .15s}
+.packet small{display:flex;justify-content:space-between;font-size:9px;letter-spacing:1px;color:#5b88bd;margin-bottom:6px}
+.packet code{display:block;white-space:pre-wrap;overflow-wrap:anywhere;font:500 12px/1.55 var(--mono);font-size:clamp(9px,calc(100cqi / 8.9),14px);color:#68cfff;text-shadow:0 0 5px #188cff60}
+.packet:active{background:#193b70}
+.packet:focus-visible{outline:2px solid #7eeaff;outline-offset:-2px}
+.packet.hazard{background:repeating-linear-gradient(135deg,#37172f 0 10px,#2c1229 10px 20px);border-color:#963c72;border-left:4px solid #fa57a2}
+.packet.hazard small{color:#ff9bcf;font-weight:600}
+.packet.hazard code{color:#ff8abf;text-shadow:0 0 6px #d62b8660}
+.packet.rejected{animation:reject .55s ease-out}
+.packet.captured{background:#1c5a8f;border-color:#bff3ff;box-shadow:0 0 18px #3cf8}
+/* Terminal code rows: numbered gutter, token colours and diff bands (− rejected lines, + captured block) */
+.packet code{font-size:clamp(9px,calc(100cqi / 9.5),14px)}
+.packet small{border-bottom:1px dashed #1d3460;padding-bottom:4px}
+.ln{display:block;position:relative;padding-left:1.55ch;background-image:linear-gradient(#24427a,#24427a);background-size:1px 100%;background-position:1.15ch 0;background-repeat:no-repeat;border-radius:1px}
+.ln:before{content:attr(data-n);position:absolute;left:0;width:1ch;text-align:right;color:#3d5785;font-weight:400;text-shadow:none}
+.ln .kw{color:#7fb2ff;font-weight:600}
+.ln .fn{color:#5cdcff}
+.ln .id{color:#d6e6ff}
+.ln .num{color:#f3d27a;text-shadow:0 0 5px #c9932a40}
+.ln .op{color:#7088b6}
+.packet.hazard .ln span{color:inherit;font-weight:inherit}
+.packet.hazard .ln{background-image:linear-gradient(#7b2e70,#7b2e70)}
+.packet.hazard .ln:before{color:#a2477f}
+.ln.del{background-color:#ff3d9a2e;box-shadow:inset 2px 0 #fa57a2}
+.ln.del:before{content:'−';color:#ff8abf;font-weight:600}
+.ln.add{background-color:#2fd0ff26;box-shadow:inset 2px 0 #5cdcff}
+.ln.add:before{content:'+';color:#bff3ff;font-weight:600}
+.hint:before{content:'● ';color:#5cdcff}
+.hint.warn:before{color:#fa57a2}
+@media(max-width:360px){.packet .ln{padding-left:0;background-image:none}.packet .ln:before{display:none}.packet .ln.del,.packet .ln.add{box-shadow:inset 2px 0 currentColor}.packet code{font-size:clamp(9px,calc(100cqi / 8.9),14px)}}
+@keyframes reject{0%,40%{background:#5a1d45;border-color:var(--alert);box-shadow:0 0 16px #f14dc180}25%{transform:translateX(-3px)}55%{transform:translateX(2px)}}
+@media(hover:hover){.packet:hover{background:#193b70;border-color:#64d9ff;box-shadow:0 0 12px #218aff40}.packet.hazard:hover{background:#4a1d40;border-color:#ff7ac0}}
+
+/* Decode */
+.decodegrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.board{display:grid;gap:8px;margin:12px 0}
+.row{display:flex;gap:8px}
+.slot{position:relative;width:54px;height:54px;display:grid;place-items:center;font-size:26px;border:1px solid #304f7f;border-radius:3px;background:#080f24;color:#b8ddff;box-shadow:inset 0 0 15px #0b347440}
+.slot small{position:absolute;right:3px;bottom:1px;font-size:10px}
+button.slot{cursor:pointer}
+button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 12px #2ca8ff50}
+.slot.exact{background:#123c67;border-color:#66dfff;color:#9eefff;box-shadow:0 0 12px #2ca8ff30}
+.slot.present{background:#48223f;border-color:#f47ac5;color:#ffb4e3}
+.slot.absent{background:#161b2d;color:#6e819f;border-style:dashed}
+.keyboard{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
+.key{position:relative;min-height:54px;border:1px solid #3d649f;border-bottom:3px solid #050d20;border-radius:3px;background:linear-gradient(#223964,#112343);color:#79dcff;font-size:25px;text-shadow:0 0 10px #229eff60}
+.key small{position:absolute;left:4px;top:2px;font-size:9px;color:#6f8fc0;text-shadow:none}
+.key.exact{border-color:#66dfff;box-shadow:0 0 10px #2ca8ff40}
+.key.present{border-color:#f47ac5;color:#ffb4e3}
+.key.absent{opacity:.45}
+@media(hover:hover){.key:hover{background:#204d80}}
+.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:12px}
+.legend b{color:#9eefff}.legend em{color:#ffb4e3;font-style:normal}
+.cluebox{margin-top:14px}
+.cluebox h3,.stat h3{font:400 11px var(--mono);letter-spacing:1px;color:#7b98c4;margin:0 0 6px}
+.clue{border-left:2px solid #339eff;padding:8px 10px;font-size:12px;background:#1030644d;color:#bce5ff;margin-top:8px}
+.clue b{font-family:var(--mono);color:#7b98c4;font-weight:400;margin-right:6px}
+.empty{font-size:12px;color:var(--muted)}
+
+/* Sidebar */
+.sidebar{background:linear-gradient(100deg,#181c2b,#0d1222)}
+.stat{padding:20px;border-bottom:1px solid #333b52;box-shadow:0 1px #020611}
+.log{font:11px/1.8 var(--mono);color:#829dc5}
+.log div{margin-bottom:6px}.log span{color:#ec77c4}
+
+/* Pause and results */
+.result{text-align:center;padding:40px 18px}
+.result .icon{font-size:56px;color:#60cfff;text-shadow:0 0 25px #1689ff}
+.result.lost .icon{color:var(--alert);text-shadow:0 0 25px #f14dc1}
+.result h2{font-size:30px;margin:14px 0 5px}
+.result p{max-width:420px;margin:12px auto 22px}
+.result .pattern{margin:6px 0 12px}
+
+/* Phones (portrait) */
+@media(max-width:760px){
+  :root{--gutter:12px}
+  header{margin:6px 6px 0;padding:14px 12px}
+  .brand{font-size:13px;letter-spacing:1px}
+  .pill{font-size:8px;padding:6px 7px;letter-spacing:0}
+  main{margin:0 6px;padding:18px 8px 10px}
+  .intro{display:block;margin-bottom:14px;padding-bottom:16px}
+  .settings{margin-top:14px}
+  .settings select{flex:1;min-width:0}
+  body.playing .introcopy{display:none}
+  body.playing .settings{margin-top:0}
+  .layout{grid-template-columns:minmax(0,1fr);gap:14px}
+  .sidebar{display:grid;grid-template-columns:1fr 1fr}
+  .stat{padding:14px}
+  .stat:last-child{grid-column:1/-1}
+  .panelhead{padding:10px}
+  .panelhead h2{font-size:10px;letter-spacing:1px}
+  .panelhead .eyebrow{font-size:8px;padding:5px}
+  .hud{display:flex}
+  .body{padding:8px}
+  .steps{display:none}
+  .target{padding:9px 10px;margin-bottom:8px}
+  .reference{gap:6px 10px}
+  #captured{font-size:11px}
+  #target{font-size:clamp(11px,3.4vw,14px);padding:6px 8px}
+  .stream{height:400px;height:clamp(250px,calc(100vh - 310px),560px);height:clamp(250px,calc(100svh - 300px),560px);padding:0 4px;border-width:1px}
+  .streamgroup{gap:5px;padding:2.5px 0}
+  .packet{padding:7px 5px 9px}
+  .packet small{font-size:8px;letter-spacing:0;margin-bottom:4px}
+  .hint{margin-top:8px;font-size:11px}
+  .actions{margin-top:8px;gap:8px}
+  .actions>button{flex:1}
+  .decodegrid{grid-template-columns:minmax(0,1fr);gap:14px}
+  .slot{width:48px;height:48px;font-size:23px}
+  .keyboard{gap:6px}
+  .cluebox{margin-top:10px}
+  footer{margin:12px 6px;padding:12px 5px;font-size:8px}
+}
+@media(max-width:420px){.panelhead h2{display:none}.panelhead{padding:9px 8px}}
+/* Smallest phones (320px): reclaim chrome so three lanes keep 14-character lines */
+@media(max-width:360px){header,main{margin-left:0;margin-right:0}main{padding:14px 6px 8px}.body{padding:6px 4px}.stream{padding:0 2px}.streamgroup{gap:4px}.packet{padding:6px 4px 8px;border-left-width:1px}.packet.hazard{border-left-width:3px}#target{font-size:12px}.slot{width:44px;height:44px}.key{min-height:48px;font-size:22px}}
+
+/* Phones in landscape and other short screens */
+@media(max-height:520px) and (orientation:landscape){
+  :root{--gutter:10px}
+  header{margin:4px auto 0;padding:8px 12px}
+  main{padding:10px 10px 8px}
+  .intro{display:flex;align-items:center;margin-bottom:10px;padding-bottom:10px}
+  h1{font-size:22px}
+  .intro p{display:none}
+  body.playing .introcopy{display:none}
+  body.playing .intro{justify-content:flex-end}
+  .layout{grid-template-columns:minmax(0,1fr);gap:12px}
+  .sidebar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stat{border-bottom:0;border-right:1px solid #333b52}
+  .panelhead{padding:8px 12px}
+  .hud{display:flex}
+  .body{padding:8px 10px}
+  .steps{display:none}
+  .intercept-grid{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr);gap:10px;align-items:start}
+  .intercept-side{display:flex;flex-direction:column}
+  #intercept .actions>button{flex:1;padding:8px}
+  .reference{grid-template-columns:auto}
+  .target{margin-bottom:0}
+  #target{font-size:14px}
+  .stream{height:260px;height:clamp(200px,calc(100vh - 110px),420px);height:clamp(200px,calc(100svh - 100px),420px)}
+  .streamgroup{gap:6px;padding:3px 0}
+  .hint{margin-top:6px;min-height:0}
+  .actions{margin-top:6px}
+  .slot{width:44px;height:44px;font-size:21px}
+  .board{gap:5px;margin:8px 0}
+  .row{gap:6px}
+  .key{min-height:46px}
+}
+
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}.packet.rejected{background:#5a1d45;border-color:var(--alert)}}
+</style>
+</head>
+<body>
+<header><div class="brand">CIPHER<span>//</span>SHIFT</div><span class="pill"><i></i>PORTABLE SLICER / CS–07</span></header>
+<main>
+  <div class="intro">
+    <div class="introcopy"><div class="eyebrow">CS–07 / FIELD DECRYPTION UNIT</div><h1>Find the signal.<br>Break the cipher.</h1><p>Intercept fragments. Deduce the sequence. Leave no trace.</p></div>
+    <div class="settings"><select id="difficulty" aria-label="Difficulty"><option value="standard">Standard · 4 glyphs</option><option value="easy">Training · 3 glyphs</option><option value="hard">Expert · 5 glyphs</option></select><button class="subtle" id="restart">New terminal ↗</button></div>
+  </div>
+  <div class="layout">
+    <section class="panel" id="console" aria-labelledby="title">
+      <div class="panelhead">
+        <h2 id="title">Signal processor</h2>
+        <div class="hud" aria-hidden="true">TRACE <span class="bar"><i id="hudBar"></i></span><span id="hudTrace">0%</span></div>
+        <span class="eyebrow" id="phase">Ready to connect</span>
+      </div>
+      <div class="body">
+        <div class="steps"><span id="s1" class="active"><span class="stepnum">01</span> INTERCEPT</span><span id="s2"><span class="stepnum">02</span> DECODE</span></div>
+        <div id="welcome">
+          <div class="target brief"><div><div class="eyebrow">Mission brief</div><p>Recover the terminal access key.</p></div><span class="pattern">⌁</span></div>
+          <p>Capture <b>three code blocks</b> that exactly match the reference from a continuously looping stream. Each capture decrypts a clue about the hidden glyph sequence.</p>
+          <p>Then decode the key in <b>five submissions</b>. Glyphs never repeat. Wrong blocks, magenta security probes and rejected keys raise trace. 100% trace locks the terminal.</p>
+          <p class="hint">No countdown. Missed blocks loop back. Pause hides the terminal. Keys: 1–6, Enter, Backspace, ←/→, P or Esc to pause.</p>
+          <button class="primary wide" id="start">Connect to terminal →</button>
+        </div>
+        <div id="intercept" class="hidden">
+          <div class="intercept-grid">
+            <div class="intercept-side">
+              <div class="target reference">
+                <div><span class="eyebrow">Reference / match exact</span><span id="captured">0 / 3 captured</span><span class="dots" id="dots" aria-hidden="true"></span></div>
+                <pre id="target" aria-label="Reference code"></pre>
+              </div>
+              <p class="hint" id="interceptHint" aria-live="polite">Tap the block that matches the reference exactly. Missed it? Every block loops back.</p>
+              <div class="actions"><button class="subtle" id="refresh" aria-label="Refresh stream, costs 5% trace">Refresh · +5%</button><button class="subtle pause">Pause</button></div>
+            </div>
+            <div class="stream" id="stream"><div class="track" id="packets"></div></div>
+          </div>
+        </div>
+        <div id="decode" class="hidden">
+          <div class="decodegrid">
+            <div>
+              <div class="statusline"><span class="muted mono">ACCESS KEY / NO REPEATS</span><span id="attempts" class="mono"></span></div>
+              <div class="board" id="history"></div>
+              <div class="row" id="entry" role="group" aria-label="Key entry"></div>
+            </div>
+            <div>
+              <div class="keyboard" id="keyboard" role="group" aria-label="Glyphs"></div>
+              <div class="legend"><span><b>✓</b> Correct position</span><span><em>↔</em> Wrong position</span><span>× Absent</span></div>
+              <div class="cluebox"><h3>INTERCEPTED CLUES</h3><div id="decodeClues"></div></div>
+            </div>
+          </div>
+          <p class="hint" id="decodeHint" aria-live="polite">Choose a slot, then tap a glyph. Use your intercepted clues.</p>
+          <div class="actions"><button class="primary" id="submit">Submit key →</button><button class="subtle" id="erase">Erase</button><button class="subtle pause">Pause</button></div>
+        </div>
+        <div id="paused" class="hidden result"><div class="icon">Ⅱ</div><h2>Signal suspended.</h2><p>Your progress is held. The terminal stays hidden while paused.</p><button class="primary" id="resume">Resume connection</button></div>
+        <div id="result" class="hidden result" aria-live="polite"></div>
+      </div>
+    </section>
+    <aside class="panel sidebar">
+      <div class="stat"><div class="statusline"><span class="eyebrow">System trace</span><span id="traceNumber" class="mono">0%</span></div><div class="bar" id="traceMeter" role="progressbar" aria-label="System trace" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="traceBar"></i></div><p class="empty">100% triggers a lockdown.</p></div>
+      <div class="stat"><h3>INTERCEPTED INTELLIGENCE</h3><div id="clues"></div></div>
+      <div class="stat"><h3>CONNECTION LOG</h3><div class="log" id="log"></div></div>
+    </aside>
+  </div>
+</main>
+<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
