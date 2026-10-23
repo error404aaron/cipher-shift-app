@@ -137,24 +137,53 @@ select option{background:#141c30;color:var(--ink)}
 
 /* Decode */
 .decodegrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
-.board{display:grid;gap:8px;margin:12px 0}
-.row{display:flex;gap:8px}
-.slot{position:relative;width:54px;height:54px;display:grid;place-items:center;font-size:26px;border:1px solid #304f7f;border-radius:3px;background:#080f24;color:#b8ddff;box-shadow:inset 0 0 15px #0b347440}
-.slot small{position:absolute;right:3px;bottom:1px;font-size:10px}
-button.slot{cursor:pointer}
-button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 12px #2ca8ff50}
-.slot.exact{background:#123c67;border-color:#66dfff;color:#9eefff;box-shadow:0 0 12px #2ca8ff30}
-.slot.present{background:#48223f;border-color:#f47ac5;color:#ffb4e3}
-.slot.absent{background:#161b2d;color:#6e819f;border-style:dashed}
+/* Glyphs: one stroked vector set in the current text colour, identical size everywhere */
+.glyph{width:1em;height:1em;display:inline-block;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linejoin:miter;stroke-linecap:round;overflow:visible}
+.clue .glyph{margin-right:.35em;color:#8ceaff}
+.hint .glyph{color:#8ceaff}
+.pattern .glyph{margin:0 .22em}
+/* The lock: recessed sockets with status LEDs; gold = wrong position, cyan = correct (magenta stays for warnings) */
+.tries{display:flex;align-items:center;gap:10px}
+.pips{display:flex;gap:4px}
+.pips i{width:10px;height:10px;border:1px solid #2a4a7f;background:#0a1430;transform:skewX(-14deg)}
+.pips i.on{background:#5cdcff;border-color:#bff3ff;box-shadow:0 0 6px #2ca8ff}
+.lockboard{display:grid;gap:7px;width:max-content;max-width:100%;margin:10px 0 12px;padding:10px;background:#040918;border:2px solid #34466e;border-top-color:#0a1022;border-left-color:#0a1022;border-radius:4px;box-shadow:inset 0 0 26px #071f4d,inset 0 2px 8px #000}
+.board{display:grid;gap:7px}
+.board:empty{display:none}
+.row{display:flex;gap:7px;align-items:center}
+.row:before{content:attr(data-n);width:2ch;margin-right:2px;font:500 10px var(--mono);color:#3d5785;text-align:right}
+.entryrow:before{color:#5cdcff}
+.slot{position:relative;width:54px;height:54px;display:grid;place-items:center;font-size:24px;color:#b8ddff;border:1px solid #23406e;border-radius:3px;background:radial-gradient(circle at 50% 40%,#0c1a3a,#050a1a 70%);box-shadow:inset 0 3px 8px #000c,inset 0 0 0 1px #0b1430}
+.slot .glyph{filter:drop-shadow(0 0 3px #2ca8ff70)}
+.slot small{position:absolute;right:4px;top:2px;font:600 10px var(--mono)}
+.slot .led{position:absolute;left:9px;right:9px;bottom:4px;height:3px;border-radius:2px;background:#16223f}
+.slot .socket{width:9px;height:9px;border:1px solid #2f5a96;transform:rotate(45deg)}
+.slot.exact{border-color:#3fb6e6;color:#9eefff}
+.slot.exact .led{background:#5cdcff;box-shadow:0 0 8px #2ca8ff}
+.slot.present{border-color:#9c7d36;color:#f3d27a}
+.slot.present .glyph{filter:drop-shadow(0 0 3px #c9932a70)}
+.slot.present .led{background:#f3d27a;box-shadow:0 0 8px #c9932a}
+.slot.absent{color:#5d6f8f;border-style:dashed;border-color:#2b3858}
+.slot.absent .glyph{filter:none}
+button.slot{cursor:pointer;color:#cfe9ff;border-color:#2f5a96}
+button.slot.selected{border:2px solid #66dfff;background:radial-gradient(circle at 50% 40%,#16376a,#07122a 70%);box-shadow:inset 0 3px 8px #000a,0 0 12px #2ca8ff55}
+button.slot.selected .socket{border-color:#66dfff}
+#future .row{opacity:.3}
 .keyboard{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
-.key{position:relative;min-height:54px;border:1px solid #3d649f;border-bottom:3px solid #050d20;border-radius:3px;background:linear-gradient(#223964,#112343);color:#79dcff;font-size:25px;text-shadow:0 0 10px #229eff60}
-.key small{position:absolute;left:4px;top:2px;font-size:9px;color:#6f8fc0;text-shadow:none}
-.key.exact{border-color:#66dfff;box-shadow:0 0 10px #2ca8ff40}
-.key.present{border-color:#f47ac5;color:#ffb4e3}
-.key.absent{opacity:.45}
-@media(hover:hover){.key:hover{background:#204d80}}
+.key{position:relative;min-height:56px;display:grid;place-items:center;font-size:26px;color:#79dcff;border:1px solid #3d649f;border-bottom:4px solid #050d20;border-radius:4px;background:linear-gradient(#2a4677,#13284d 55%,#0f2042);box-shadow:inset 0 1px #9cc7ff40,inset 0 -2px 6px #0006,0 2px 0 #02060f}
+.key .glyph{filter:drop-shadow(0 0 4px #229eff70)}
+.key small{position:absolute;left:5px;top:3px;font:500 9px var(--mono);color:#6f8fc0}
+.key .led{position:absolute;right:5px;top:5px;width:6px;height:6px;border-radius:50%;background:#16223f;box-shadow:inset 0 1px 1px #000}
+.key.exact .led{background:#5cdcff;box-shadow:0 0 6px #2ca8ff}
+.key.present .led{background:#f3d27a;box-shadow:0 0 6px #c9932a}
+.key.absent{opacity:.42}
+.key.absent .led{background:#3a4560;box-shadow:none}
+@media(hover:hover){.key:hover{background:linear-gradient(#335a95,#183363 55%,#12274f)}}
 .legend{display:flex;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:12px}
-.legend b{color:#9eefff}.legend em{color:#ffb4e3;font-style:normal}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .led{display:inline-block;width:12px;height:3px;border-radius:2px}
+.legend .led.exact{background:#5cdcff;box-shadow:0 0 6px #2ca8ff}.legend .led.present{background:#f3d27a;box-shadow:0 0 6px #c9932a}.legend .led.absent{background:#2b3858}
+.legend b{color:#9eefff}.legend em{color:#f3d27a;font-style:normal}
 .cluebox{margin-top:14px}
 .cluebox h3,.stat h3{font:400 11px var(--mono);letter-spacing:1px;color:#7b98c4;margin:0 0 6px}
 .clue{border-left:2px solid #339eff;padding:8px 10px;font-size:12px;background:#1030644d;color:#bce5ff;margin-top:8px}
@@ -173,7 +202,7 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
 .result.lost .icon{color:var(--alert);text-shadow:0 0 25px #f14dc1}
 .result h2{font-size:30px;margin:14px 0 5px}
 .result p{max-width:420px;margin:12px auto 22px}
-.result .pattern{margin:6px 0 12px}
+.result .pattern{margin:6px 0 12px;font-size:30px;letter-spacing:0}
 
 /* Phones (portrait) */
 @media(max-width:760px){
@@ -191,6 +220,10 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
   .sidebar{display:grid;grid-template-columns:1fr 1fr}
   .stat{padding:14px}
   .stat:last-child{grid-column:1/-1}
+  /* trace lives in the panel HUD and clues beside the decode pad, so the sidebar keeps only the log */
+  .stat-trace,.stat-clues{display:none}
+  #decode .actions{display:grid;grid-template-columns:2fr 1fr 1fr}
+  #decode .actions>button{white-space:nowrap;padding:10px 6px}
   .panelhead{padding:10px}
   .panelhead h2{font-size:10px;letter-spacing:1px}
   .panelhead .eyebrow{font-size:8px;padding:5px}
@@ -209,7 +242,7 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
   .actions{margin-top:8px;gap:8px}
   .actions>button{flex:1}
   .decodegrid{grid-template-columns:minmax(0,1fr);gap:14px}
-  .slot{width:48px;height:48px;font-size:23px}
+  .slot{width:48px;height:48px;font-size:22px}
   .keyboard{gap:6px}
   .cluebox{margin-top:10px}
   footer{margin:12px 6px;padding:12px 5px;font-size:8px}
@@ -231,6 +264,8 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
   .layout{grid-template-columns:minmax(0,1fr);gap:12px}
   .sidebar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
   .stat{border-bottom:0;border-right:1px solid #333b52}
+  .stat-trace,.stat-clues{display:none}
+  .stat-log{grid-column:1/-1;border-right:0}
   .panelhead{padding:8px 12px}
   .hud{display:flex}
   .body{padding:8px 10px}
@@ -246,7 +281,7 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
   .hint{margin-top:6px;min-height:0}
   .actions{margin-top:6px}
   .slot{width:44px;height:44px;font-size:21px}
-  .board{gap:5px;margin:8px 0}
+  .board,.lockboard{gap:5px}
   .row{gap:6px}
   .key{min-height:46px}
 }
@@ -255,6 +290,16 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
 </style>
 </head>
 <body>
+<!-- Key glyphs drawn as one consistent vector set (fonts render △○◇⊕≋⌁ at mismatched sizes). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="g-tri" viewBox="0 0 24 24"><path d="M12 3.4 21.3 19.6H2.7Z"/></symbol>
+  <symbol id="g-ring" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/></symbol>
+  <symbol id="g-diamond" viewBox="0 0 24 24"><path d="M12 2.4 21.6 12 12 21.6 2.4 12Z"/></symbol>
+  <symbol id="g-node" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6v16.8M3.6 12h16.8"/></symbol>
+  <symbol id="g-wave" viewBox="0 0 24 24"><path d="M2.6 6.8c2-2.6 4.2-2.6 6.2 0s4.2 2.6 6.2 0 4.2-2.6 6.2 0M2.6 12c2-2.6 4.2-2.6 6.2 0s4.2 2.6 6.2 0 4.2-2.6 6.2 0M2.6 17.2c2-2.6 4.2-2.6 6.2 0s4.2 2.6 6.2 0 4.2-2.6 6.2 0"/></symbol>
+  <symbol id="g-bolt" viewBox="0 0 24 24"><path d="M2.6 17 9 10.6l4.4 4.4 7.8-7.8M15.6 7.2h5.6v5.6"/></symbol>
+  <symbol id="g-lockdown" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M8 8l8 8M16 8l-8 8"/></symbol>
+</svg>
 <header><div class="brand">CIPHER<span>//</span>SHIFT</div><span class="pill"><i></i>PORTABLE SLICER / CS–07</span></header>
 <main>
   <div class="intro">
@@ -271,7 +316,7 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
       <div class="body">
         <div class="steps"><span id="s1" class="active"><span class="stepnum">01</span> INTERCEPT</span><span id="s2"><span class="stepnum">02</span> DECODE</span></div>
         <div id="welcome">
-          <div class="target brief"><div><div class="eyebrow">Mission brief</div><p>Recover the terminal access key.</p></div><span class="pattern">⌁</span></div>
+          <div class="target brief"><div><div class="eyebrow">Mission brief</div><p>Recover the terminal access key.</p></div><span class="pattern"><svg class="glyph" aria-hidden="true" focusable="false"><use href="#g-bolt"/></svg></span></div>
           <p>Capture <b>three code blocks</b> that exactly match the reference from a continuously looping stream. Each capture decrypts a clue about the hidden glyph sequence.</p>
           <p>Then decode the key in <b>five submissions</b>. Glyphs never repeat. Wrong blocks, magenta security probes and rejected keys raise trace. 100% trace locks the terminal.</p>
           <p class="hint">No countdown. Missed blocks loop back. Pause hides the terminal. Keys: 1–6, Enter, Backspace, ←/→, P or Esc to pause.</p>
@@ -293,13 +338,17 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
         <div id="decode" class="hidden">
           <div class="decodegrid">
             <div>
-              <div class="statusline"><span class="muted mono">ACCESS KEY / NO REPEATS</span><span id="attempts" class="mono"></span></div>
-              <div class="board" id="history"></div>
-              <div class="row" id="entry" role="group" aria-label="Key entry"></div>
+              <div class="statusline"><span class="muted mono">ACCESS KEY / NO REPEATS</span><span class="tries"><span class="pips" id="pips" aria-hidden="true"></span><span id="attempts" class="mono"></span></span></div>
+              <!-- The lock: past submissions, the live entry row, then unused attempts. -->
+              <div class="lockboard">
+                <div class="board" id="history"></div>
+                <div class="row entryrow" id="entry" role="group" aria-label="Key entry"></div>
+                <div class="board" id="future" aria-hidden="true"></div>
+              </div>
             </div>
             <div>
               <div class="keyboard" id="keyboard" role="group" aria-label="Glyphs"></div>
-              <div class="legend"><span><b>✓</b> Correct position</span><span><em>↔</em> Wrong position</span><span>× Absent</span></div>
+              <div class="legend"><span><i class="led exact"></i><b>✓</b> Correct position</span><span><i class="led present"></i><em>↔</em> Wrong position</span><span><i class="led absent"></i>× Absent</span></div>
               <div class="cluebox"><h3>INTERCEPTED CLUES</h3><div id="decodeClues"></div></div>
             </div>
           </div>
@@ -311,9 +360,9 @@ button.slot.selected{border:2px solid #66dfff;background:#123058;box-shadow:0 0 
       </div>
     </section>
     <aside class="panel sidebar">
-      <div class="stat"><div class="statusline"><span class="eyebrow">System trace</span><span id="traceNumber" class="mono">0%</span></div><div class="bar" id="traceMeter" role="progressbar" aria-label="System trace" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="traceBar"></i></div><p class="empty">100% triggers a lockdown.</p></div>
-      <div class="stat"><h3>INTERCEPTED INTELLIGENCE</h3><div id="clues"></div></div>
-      <div class="stat"><h3>CONNECTION LOG</h3><div class="log" id="log"></div></div>
+      <div class="stat stat-trace"><div class="statusline"><span class="eyebrow">System trace</span><span id="traceNumber" class="mono">0%</span></div><div class="bar" id="traceMeter" role="progressbar" aria-label="System trace" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="traceBar"></i></div><p class="empty">100% triggers a lockdown.</p></div>
+      <div class="stat stat-clues"><h3>INTERCEPTED INTELLIGENCE</h3><div id="clues"></div></div>
+      <div class="stat stat-log"><h3>CONNECTION LOG</h3><div class="log" id="log"></div></div>
     </aside>
   </div>
 </main>

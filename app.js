@@ -36,9 +36,38 @@
       return d;
     }));
   }
-  function hint(id, text, warn = false) {
-    $(id).textContent = text;
+  // `content` is a string or an array of strings and nodes (e.g. glyph icons).
+  function hint(id, content, warn = false) {
+    $(id).replaceChildren(...[].concat(content));
     $(id).classList.toggle('warn', warn);
+  }
+
+  // Glyphs keep their Unicode identity in game state but are drawn from the SVG sprite in index.html.
+  const GLYPH_ART = { '△': ['tri', 'triangle'], '○': ['ring', 'ring'], '◇': ['diamond', 'diamond'], '⊕': ['node', 'node'], '≋': ['wave', 'wave'], '⌁': ['bolt', 'bolt'] };
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  function glyphName(g) {
+    return GLYPH_ART[g]?.[1] ?? g;
+  }
+  function glyphIcon(g) {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'glyph');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const use = document.createElementNS(SVG_NS, 'use');
+    use.setAttribute('href', '#g-' + GLYPH_ART[g][0]);
+    svg.append(use);
+    return svg;
+  }
+  // A glyph icon followed by its name for screen readers.
+  function glyphLabel(g) {
+    const name = document.createElement('span');
+    name.className = 'sr-only';
+    name.textContent = glyphName(g);
+    return [glyphIcon(g), name];
+  }
+  // Clue text starts with the glyph character; swap it for the icon.
+  function clueNodes(c) {
+    return [...glyphLabel(c.glyph), L.clueText(c).slice(c.glyph.length)];
   }
 
   function setTrace(value) {
@@ -273,8 +302,7 @@
     markLines(id, 'add');
     renderCaptures();
     renderClues();
-    const clue = L.clueText(state.clues[state.captures - 1]);
-    hint('interceptHint', 'Fragment captured. Clue ' + state.captures + ': ' + clue);
+    hint('interceptHint', ['Fragment captured. Clue ' + state.captures + ': ', ...clueNodes(state.clues[state.captures - 1])]);
     log('Fragment ' + state.captures + ' captured. Clue decrypted.');
     const term = state;
     state.timer = setTimeout(() => {
@@ -299,7 +327,7 @@
       d.className = 'clue';
       const n = document.createElement('b');
       n.textContent = String(i + 1).padStart(2, '0');
-      d.append(n, L.clueText(c));
+      d.append(n, ...clueNodes(c));
       return d;
     });
     const empty = () => {
@@ -349,9 +377,19 @@
       b.dataset.glyph = g;
       const n = document.createElement('small');
       n.textContent = i + 1;
-      b.append(n, g);
+      const led = document.createElement('i');
+      led.className = 'led';
+      b.append(n, glyphIcon(g), led);
       return b;
     }));
+  }
+  function led() {
+    const i = document.createElement('i');
+    i.className = 'led';
+    return i;
+  }
+  function rowNumber(i) {
+    return String(i + 1).padStart(2, '0');
   }
 
   function knownStatus(g) {
@@ -369,6 +407,11 @@
   function renderDecode() {
     const left = L.MAX_SUBMISSIONS - state.attempt;
     $('attempts').textContent = left + (left === 1 ? ' try left' : ' tries left');
+    $('pips').replaceChildren(...Array.from({ length: L.MAX_SUBMISSIONS }, (_, i) => {
+      const pip = document.createElement('i');
+      if (i < left) pip.className = 'on';
+      return pip;
+    }));
     const labels = { exact: '✓', present: '↔', absent: '×' };
     const words = { exact: 'correct position', present: 'wrong position', absent: 'absent' };
     const rows = $('history');
@@ -376,29 +419,51 @@
       const r = state.history[rows.children.length];
       const row = document.createElement('div');
       row.className = 'row';
+      row.dataset.n = rowNumber(rows.children.length);
       row.setAttribute('role', 'img');
-      row.setAttribute('aria-label', 'Submission ' + (rows.children.length + 1) + ': ' + r.guess.map((g, i) => g + ' ' + words[r.marks[i]]).join(', '));
+      row.setAttribute('aria-label', 'Submission ' + (rows.children.length + 1) + ': ' + r.guess.map((g, i) => glyphName(g) + ' ' + words[r.marks[i]]).join(', '));
       r.guess.forEach((g, i) => {
         const s = document.createElement('div');
         s.className = 'slot ' + r.marks[i];
         const mark = document.createElement('small');
         mark.textContent = labels[r.marks[i]];
-        s.append(g, mark);
+        s.append(glyphIcon(g), mark, led());
         row.append(s);
       });
       rows.append(row);
     }
+    // Unused attempts stay visible as dim rows below the live one.
+    const live = state.phase === 'decode';
+    $('entry').dataset.n = rowNumber(state.attempt);
+    $('entry').classList.toggle('hidden', !live);
+    const future = live ? L.MAX_SUBMISSIONS - state.attempt - 1 : 0;
+    $('future').replaceChildren(...Array.from({ length: future }, (_, k) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.n = rowNumber(state.attempt + 1 + k);
+      for (let i = 0; i < state.n; i++) {
+        const s = document.createElement('div');
+        s.className = 'slot';
+        row.append(s);
+      }
+      return row;
+    }));
     [...$('entry').children].forEach((b, i) => {
       const g = state.guess[i];
-      b.textContent = g || '·';
+      if (b.dataset.g !== (g ?? '')) {
+        b.dataset.g = g ?? '';
+        const socket = document.createElement('span');
+        socket.className = 'socket';
+        b.replaceChildren(g ? glyphIcon(g) : socket);
+      }
       b.classList.toggle('selected', i === state.selected);
       b.setAttribute('aria-pressed', String(i === state.selected));
-      b.setAttribute('aria-label', 'Slot ' + (i + 1) + (g ? ' ' + g : ' empty'));
+      b.setAttribute('aria-label', 'Slot ' + (i + 1) + (g ? ' ' + glyphName(g) : ' empty'));
     });
     [...$('keyboard').children].forEach((b, i) => {
       const status = knownStatus(b.dataset.glyph);
       b.className = 'key' + (status ? ' ' + status : '');
-      b.setAttribute('aria-label', 'Glyph ' + (i + 1) + ' ' + b.dataset.glyph + (status ? ', ' + words[status] : ''));
+      b.setAttribute('aria-label', 'Glyph ' + (i + 1) + ' ' + glyphName(b.dataset.glyph) + (status ? ', ' + words[status] : ''));
     });
     $('submit').disabled = state.guess.includes(null);
   }
@@ -412,7 +477,7 @@
     const at = state.guess.indexOf(g);
     if (at >= 0 && at !== state.selected) {
       state.guess[at] = null;
-      hint('decodeHint', 'Glyphs never repeat: ' + g + ' moved from slot ' + (at + 1) + ' to slot ' + (state.selected + 1) + '.');
+      hint('decodeHint', ['Glyphs never repeat: ', ...glyphLabel(g), ' moved from slot ' + (at + 1) + ' to slot ' + (state.selected + 1) + '.']);
     }
     state.guess[state.selected] = g;
     for (let k = 1; k <= state.n; k++) {
@@ -505,11 +570,14 @@
     box.className = 'result' + (win ? '' : ' lost');
     box.innerHTML = '<div class="eyebrow"></div><div class="icon"></div><h2></h2><p class="msg"></p><div class="pattern"></div><p class="mono stats"></p><button class="primary" id="again">Connect to next terminal →</button>';
     box.querySelector('.eyebrow').textContent = win ? 'TERMINAL COMPROMISED' : 'SECURITY LOCKDOWN';
-    box.querySelector('.icon').textContent = win ? '⌁' : '⊗';
+    const icon = glyphIcon('⌁');
+    if (!win) icon.firstChild.setAttribute('href', '#g-lockdown');
+    box.querySelector('.icon').replaceChildren(icon);
     box.querySelector('h2').textContent = win ? 'You’re through.' : 'Signal lost.';
     box.querySelector('.msg').textContent = msg;
-    box.querySelector('.pattern').textContent = state.secret.join(' ');
-    box.querySelector('.pattern').setAttribute('aria-label', 'Access key ' + state.secret.join(' '));
+    box.querySelector('.pattern').replaceChildren(...state.secret.map(glyphIcon));
+    box.querySelector('.pattern').setAttribute('role', 'img');
+    box.querySelector('.pattern').setAttribute('aria-label', 'Access key: ' + state.secret.map(glyphName).join(', '));
     box.querySelector('.stats').textContent = 'TRACE ' + state.trace + '% · ' + state.attempt + ' SUBMISSIONS' + (wins ? ' · ' + wins + ' WINS ON THIS BROWSER' : '');
     $('again').onclick = (e) => {
       e.currentTarget.disabled = true;
