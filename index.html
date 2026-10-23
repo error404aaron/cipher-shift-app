@@ -25,10 +25,11 @@
   --bezel:linear-gradient(160deg,#5b6474 0%,#2a303a 30%,#1b1f26 62%,#3a414d 100%);
   --bevel:inset 0 1px 0 #ffffff30,inset 0 -1px 0 #000b,inset 1px 0 0 #ffffff12,inset -1px 0 0 #0007;
   --screw:radial-gradient(circle at 38% 34%,#d2d9e4 0 10%,#7a8496 30%,#363d49 58%,#11141a 70%,transparent 73%);
+  --grain-layer:none;
   --slot:linear-gradient(135deg,transparent 42%,#0b0d12cc 42% 58%,transparent 58%)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;min-height:100vh;color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;background-color:var(--bg);background-image:linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px),radial-gradient(ellipse at 50% -20%,#15233c,transparent 65%);background-size:48px 48px,48px 48px,auto;background-attachment:fixed;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;background-color:var(--bg);background-image:var(--grain-layer),linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px),radial-gradient(ellipse at 50% -20%,#15233c,transparent 65%);background-size:128px 128px,48px 48px,48px 48px,auto;background-attachment:fixed;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 button,select{font:inherit}
 button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 button:focus-visible,select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
@@ -45,7 +46,7 @@ p{line-height:1.6;margin:8px 0;color:var(--muted)}
 .meta b{color:var(--ink);font-weight:600}
 
 /* Device shell */
-header{position:relative;max-width:1160px;margin:16px auto 0;padding:18px calc(var(--gutter) + 10px);display:flex;justify-content:space-between;align-items:center;gap:18px;background:var(--brushed),var(--metal);border:1px solid #0b0d12;border-bottom:0;box-shadow:var(--bevel),0 10px 28px #000a}
+header{position:relative;max-width:1160px;margin:16px auto 0;padding:18px calc(var(--gutter) + 10px);display:flex;justify-content:space-between;align-items:center;gap:18px;background:var(--grain-layer),var(--brushed),var(--metal);border:1px solid #0b0d12;border-bottom:0;box-shadow:var(--bevel),0 10px 28px #000a}
 header:before{content:'';position:absolute;inset:6px;pointer-events:none;background:var(--slot) left top/10px 10px no-repeat,var(--screw) left top/10px 10px no-repeat,var(--slot) right top/10px 10px no-repeat,var(--screw) right top/10px 10px no-repeat,var(--slot) left bottom/10px 10px no-repeat,var(--screw) left bottom/10px 10px no-repeat,var(--slot) right bottom/10px 10px no-repeat,var(--screw) right bottom/10px 10px no-repeat}
 header:after{content:'';position:absolute;left:-1px;right:-1px;bottom:-4px;height:4px;background:repeating-linear-gradient(135deg,var(--lime) 0 6px,transparent 6px 12px);opacity:.8}
 .brand{display:flex;align-items:center;gap:10px;font:700 26px/1 var(--display);letter-spacing:2px;text-transform:uppercase;text-shadow:0 1px 0 #000,0 -1px 0 #ffffff1c}
@@ -55,7 +56,7 @@ header:after{content:'';position:absolute;left:-1px;right:-1px;bottom:-4px;heigh
 .pill{padding:6px 10px;font:600 10px var(--mono);letter-spacing:1.5px;color:var(--lime);border:1px solid var(--lime);white-space:nowrap}
 .pill i{display:inline-block;width:7px;height:7px;margin-right:7px;background:var(--lime);animation:blink 1.6s steps(2) infinite}
 @keyframes blink{50%{opacity:.25}}
-main{max-width:1160px;margin:0 auto;padding:30px var(--gutter) var(--gutter);background:var(--brushed),linear-gradient(180deg,#1c2028,#121519 40%,#15181e);border:1px solid #0b0d12;border-top:0;box-shadow:inset 1px 0 #ffffff12,inset -1px 0 #0009,0 20px 60px #000a}
+main{max-width:1160px;margin:0 auto;padding:30px var(--gutter) var(--gutter);background:var(--grain-layer),var(--brushed),linear-gradient(180deg,#1c2028,#121519 40%,#15181e);border:1px solid #0b0d12;border-top:0;box-shadow:inset 1px 0 #ffffff12,inset -1px 0 #0009,0 20px 60px #000a}
 .intro{position:relative;display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid var(--line)}
 .intro:after{content:'';position:absolute;bottom:-1px;left:0;width:120px;height:3px;background:var(--lime)}
 h1{margin:10px 0 8px;font:700 clamp(38px,6vw,66px)/.92 var(--display);letter-spacing:.5px;text-transform:uppercase;color:var(--ink)}
@@ -64,13 +65,24 @@ h1 em{display:inline-block;margin-top:.08em;padding:.02em .1em 0;line-height:.92
 .settings{display:flex;gap:8px}
 /* While a terminal is live the briefing copy collapses so the console fits the screen */
 body.playing .introcopy{display:none}body.playing .intro{justify-content:flex-end;margin-bottom:16px;padding-bottom:14px}
-footer{position:relative;max-width:1160px;margin:0 auto 20px;padding:12px calc(var(--gutter) + 10px);display:flex;justify-content:space-between;align-items:center;gap:15px;font:500 9px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:#a7b2c3;text-shadow:0 1px 0 #000;background:var(--brushed),var(--metal);border:1px solid #0b0d12;border-top:3px solid #07090d;box-shadow:var(--bevel)}
+footer{position:relative;max-width:1160px;margin:0 auto 20px;padding:12px calc(var(--gutter) + 10px);display:flex;justify-content:space-between;align-items:center;gap:15px;font:500 9px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:#a7b2c3;text-shadow:0 1px 0 #000;background:var(--grain-layer),var(--brushed),var(--metal);border:1px solid #0b0d12;border-top:3px solid #07090d;box-shadow:var(--bevel)}
 footer .barcode{width:96px;height:12px}
+.grainbtn{min-height:40px;padding:6px 12px;color:#c9d3e0;background:var(--grain-layer),var(--brushed),var(--metal-dark);border:1px solid #0b0d12;box-shadow:var(--bevel),0 2px 0 #07090d;font:600 13px var(--display);letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 0 #000;white-space:nowrap}
+.grainbtn b{color:var(--lime);font-weight:600}
+@media(hover:hover){.grainbtn:hover{color:var(--lime)}}
+
+/* Film grain from one pre-rendered tile (tools/make-grain.mjs).
+   Static: baked into the metal surfaces as their top background layer, painted once and never repainted
+   by the moving stream. Animated: a full-screen overlay jittered with transforms only (cheap with GPU
+   compositing, costly in software rendering, so it is opt-in); the reduced-motion rule holds it still. */
+html[data-grain="static"]{--grain-layer:url(textures/grain.png)}
+html[data-grain="animated"] body:after{content:'';position:fixed;inset:-64px;z-index:50;pointer-events:none;background:url(textures/grain.png) 0 0/128px 128px;will-change:transform;animation:grain .8s steps(1,end) infinite}
+@keyframes grain{0%{transform:translate3d(0,0,0)}12.5%{transform:translate3d(-37px,21px,0)}25%{transform:translate3d(19px,-43px,0)}37.5%{transform:translate3d(-11px,-27px,0)}50%{transform:translate3d(41px,13px,0)}62.5%{transform:translate3d(-29px,47px,0)}75%{transform:translate3d(7px,-17px,0)}87.5%{transform:translate3d(33px,31px,0)}}
 
 /* Controls: flat, square, condensed */
-select,.subtle{min-height:44px;padding:10px 14px;color:var(--ink);background:var(--brushed),var(--metal-dark);border:1px solid #0b0d12;border-radius:0;box-shadow:var(--bevel),0 2px 0 #07090d;font:600 14px var(--display);letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 0 #000}
+select,.subtle{min-height:44px;padding:10px 14px;color:var(--ink);background:var(--grain-layer),var(--brushed),var(--metal-dark);border:1px solid #0b0d12;border-radius:0;box-shadow:var(--bevel),0 2px 0 #07090d;font:600 14px var(--display);letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 0 #000}
 select option{background:#0b0e15;color:var(--ink)}
-.primary{min-height:48px;padding:12px 22px;color:var(--on-lime);background:linear-gradient(180deg,#e2ff7d 0%,#c8ff2e 42%,#a6d81a 100%);border:1px solid #57720d;border-radius:0;box-shadow:inset 0 1px 0 #f6ffd0,inset 0 -2px 0 #6f9411,inset -8px 0 0 #8fbf1455,0 3px 0 #27340b,0 6px 14px #0008;font:700 18px var(--display);letter-spacing:2.5px;text-transform:uppercase;text-shadow:0 1px 0 #ecffaa}
+.primary{min-height:48px;padding:12px 22px;color:var(--on-lime);background:var(--grain-layer),linear-gradient(180deg,#e2ff7d 0%,#c8ff2e 42%,#a6d81a 100%);border:1px solid #57720d;border-radius:0;box-shadow:inset 0 1px 0 #f6ffd0,inset 0 -2px 0 #6f9411,inset -8px 0 0 #8fbf1455,0 3px 0 #27340b,0 6px 14px #0008;font:700 18px var(--display);letter-spacing:2.5px;text-transform:uppercase;text-shadow:0 1px 0 #ecffaa}
 .subtle:active,.primary:active,.key:active{transform:translateY(2px);box-shadow:inset 0 2px 5px #000b}
 .wide{width:100%}
 .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
@@ -79,7 +91,7 @@ select option{background:#0b0e15;color:var(--ink)}
 /* Panels: hairline frame with lime corner brackets */
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;align-items:start}
 .panel{position:relative;overflow:hidden;border:5px solid transparent;background:linear-gradient(var(--lime),var(--lime)) left top/16px 2px no-repeat padding-box,linear-gradient(var(--lime),var(--lime)) left top/2px 16px no-repeat padding-box,linear-gradient(var(--lime),var(--lime)) right bottom/16px 2px no-repeat padding-box,linear-gradient(var(--lime),var(--lime)) right bottom/2px 16px no-repeat padding-box,linear-gradient(var(--panel),var(--panel)) padding-box,var(--bezel) border-box;box-shadow:0 0 0 1px #0b0d12,inset 0 0 0 1px #000,0 10px 26px #0009}
-.panelhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:var(--brushed),var(--metal);border-bottom:2px solid #07090d;box-shadow:var(--bevel)}
+.panelhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:var(--grain-layer),var(--brushed),var(--metal);border-bottom:2px solid #07090d;box-shadow:var(--bevel)}
 .panelhead:before,.panelhead:after{content:'';flex:none;width:10px;height:10px;background:var(--slot),var(--screw)}
 .panelhead h2{display:flex;align-items:center;gap:9px;margin:0 auto 0 0;font:700 19px/1 var(--display);letter-spacing:2px;text-transform:uppercase;text-shadow:0 1px 0 #000,0 -1px 0 #ffffff1c}
 .panelhead h2:before{content:'';width:6px;height:19px;background:var(--lime)}
@@ -239,7 +251,7 @@ button.slot.selected{border:2px solid #66dfff;background:radial-gradient(circle 
 button.slot.selected .socket{border-color:#66dfff}
 #future .row{opacity:.3}
 .keyboard{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
-.key{position:relative;min-height:56px;display:grid;place-items:center;font-size:26px;color:#79dcff;background:var(--brushed),linear-gradient(180deg,#3a414e,#232831 55%,#1b1f27);border:1px solid #0b0d12;border-bottom:4px solid #07090d;box-shadow:var(--bevel),0 2px 0 #000}
+.key{position:relative;min-height:56px;display:grid;place-items:center;font-size:26px;color:#79dcff;background:var(--grain-layer),var(--brushed),linear-gradient(180deg,#3a414e,#232831 55%,#1b1f27);border:1px solid #0b0d12;border-bottom:4px solid #07090d;box-shadow:var(--bevel),0 2px 0 #000}
 .key .glyph{filter:drop-shadow(0 0 4px #229eff70)}
 .key small{position:absolute;left:5px;top:3px;font:600 9px var(--mono);color:var(--lime)}
 .key .led{position:absolute;right:5px;top:5px;width:6px;height:6px;border-radius:50%;background:#16223f;box-shadow:inset 0 1px 1px #000}
@@ -554,7 +566,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
     </aside>
   </div>
 </main>
-<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span class="barcode" aria-hidden="true"></span><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
+<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span class="barcode" aria-hidden="true"></span><button class="grainbtn" id="grain" type="button">Grain · <b>static</b></button><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
 <script src="logic.js"></script>
 <script src="app.js"></script>
 </body>

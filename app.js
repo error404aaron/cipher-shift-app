@@ -786,6 +786,30 @@
     }
   });
 
+  // Film grain is a display preference (static, animated or off), remembered per browser.
+  const GRAIN_MODES = ['static', 'animated', 'off'];
+  function setGrain(mode, remember = true) {
+    document.documentElement.dataset.grain = mode;
+    const still = mode === 'animated' && reducedMotion.matches;
+    $('grain').querySelector('b').textContent = still ? 'animated (still)' : mode;
+    $('grain').setAttribute('aria-label', 'Film grain: ' + mode + (still ? ', held still by reduced motion' : '') + '. Activate to change.');
+    if (remember) {
+      try {
+        localStorage.setItem('cipherShiftGrain', mode);
+      } catch {
+        /* storage unavailable: the choice lasts for this visit */
+      }
+    }
+  }
+  let savedGrain = null;
+  try {
+    savedGrain = localStorage.getItem('cipherShiftGrain');
+  } catch {
+    /* storage unavailable */
+  }
+  setGrain(GRAIN_MODES.includes(savedGrain) ? savedGrain : 'static', false);
+  $('grain').onclick = () => setGrain(GRAIN_MODES[(GRAIN_MODES.indexOf(document.documentElement.dataset.grain) + 1) % GRAIN_MODES.length]);
+
   reset();
   // Read-only hook for automated browser checks.
   window.CipherShiftDebug = { get state() { return state; }, motion };
