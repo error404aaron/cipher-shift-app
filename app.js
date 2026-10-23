@@ -209,10 +209,18 @@
     if (ms) setTimeout(() => rows.forEach((row) => row.classList.remove(mode)), ms);
   }
 
+  // Decorative 4-hex signal ID for the reference readout (a simple string hash; not a game rule).
+  function signature(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+    return ((h >>> 0) & 0xffff).toString(16).toUpperCase().padStart(4, '0');
+  }
+
   function newStream() {
     const keyboardFocus = motion.hold ? document.activeElement?.dataset?.id : undefined;
     state.stream = L.makeStream(state.mode);
     renderCode($('target'), state.stream.target);
+    $('refsig').textContent = signature(state.stream.target);
     renderStream();
     // Captures already hold input for CAPTURE_HOLD_MS, so a short guard covers taps landing on fresh blocks.
     state.lockUntil = now() + REGEN_GUARD_MS;
@@ -228,7 +236,7 @@
       b.className = 'packet' + (block.hazard ? ' hazard' : '');
       b.dataset.id = block.id;
       const label = document.createElement('small');
-      label.textContent = block.hazard ? '▲ PROBE' : '● BLK ' + String(block.id + 1).padStart(2, '0');
+      label.textContent = block.hazard ? '▲ PROBE' : 'BLK.' + String(block.id + 1).padStart(2, '0');
       const code = document.createElement('code');
       renderCode(code, block.code);
       b.append(label, code);
