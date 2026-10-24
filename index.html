@@ -77,7 +77,7 @@ h1 em{display:inline-block;margin-top:.08em;padding:.02em .1em 0;line-height:.92
 .settings{display:flex;gap:8px}
 /* While a terminal is live the briefing copy collapses so the console fits the screen */
 body.playing .introcopy{display:none}body.playing .intro{justify-content:flex-end;margin-bottom:16px;padding-bottom:14px}
-footer{position:relative;max-width:1160px;margin:0 auto 20px;padding:12px calc(var(--gutter) + 10px);display:flex;justify-content:space-between;align-items:center;gap:15px;font:500 9px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:#a7b2c3;text-shadow:0 1px 0 #000;background:var(--grain-layer),var(--brushed),var(--metal);border:1px solid #0b0d12;border-top:3px solid #07090d;box-shadow:var(--bevel)}
+footer{position:relative;max-width:1160px;margin:0 auto 20px;padding:12px calc(var(--gutter) + 10px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 15px;font:500 9px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:#a7b2c3;text-shadow:0 1px 0 #000;background:var(--grain-layer),var(--brushed),var(--metal);border:1px solid #0b0d12;border-top:3px solid #07090d;box-shadow:var(--bevel)}
 footer .barcode{width:96px;height:12px}
 .grainbtn{min-height:40px;padding:6px 12px;color:#c9d3e0;background:var(--grain-layer),var(--brushed),var(--metal-dark);border:1px solid #0b0d12;box-shadow:var(--bevel),0 2px 0 #07090d;font:600 13px var(--display);letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 0 #000;white-space:nowrap}
 .grainbtn b{color:var(--lime);font-weight:600}
@@ -446,6 +446,27 @@ button.slot.selected .socket{border-color:#66dfff}
   .board,.lockboard{gap:5px}
   .row{gap:6px}
   .key{min-height:46px}
+  /* The footer switches get their own full-width row: a footer wider than the screen zooms the whole page out. */
+  footer{flex-wrap:wrap;row-gap:8px}
+  footer .barcode{display:none}
+  .footctl{order:1;width:100%;flex-wrap:wrap}
+  .footctl>button{flex:1 1 auto}
+  /* Decode on one screen: the lock fills the left column; glyph keys, clues, hint and actions stack on the right. */
+  #decode{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:14px}
+  .decodegrid{display:contents}
+  .decodegrid>:first-child{grid-column:1;grid-row:1/-1}
+  .decodegrid>:last-child{grid-column:2;grid-row:1}
+  #decodeHint{grid-column:2;grid-row:2;margin-top:6px}
+  #decode .actions{grid-column:2;grid-row:4;display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:6px}
+  #decode .actions>button{white-space:nowrap;padding:8px 6px;font-size:13px;letter-spacing:.5px}
+  #decode .statusline{margin-bottom:4px;gap:8px;font-size:10px}
+  #decode .lockboard{margin:0;padding:8px;border-width:4px}
+  .keyboard{gap:5px}
+  #decode .key{min-height:44px;font-size:22px}
+  .legend{margin-top:6px;gap:10px;font-size:10px}
+  .cluebox{margin-top:6px}
+  .cluebox h3{font-size:12px;margin-bottom:2px}
+  .clue{padding:4px 8px;margin-top:4px;font-size:11px}
 }
 
 /* Feedback and transitions. Every animation here ends in the element's normal state, so the

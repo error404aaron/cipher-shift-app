@@ -1,7 +1,7 @@
 /* Cipher Shift offline support: keeps every game file in a versioned cache and serves the game from it.
    VERSION and FILES are written by tools/make-sw.mjs; rerun it after changing anything in dist/. */
 'use strict';
-const VERSION = '1e0c288af470e657';
+const VERSION = 'e23a6a773dbe3693';
 const FILES = [
   'app.js',
   'fonts/barlow-condensed-500.woff2',
