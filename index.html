@@ -297,6 +297,17 @@ button.slot.selected .socket{border-color:#66dfff}
 .confirmbox p{color:#c9d3e0}
 .confirmbox .actions>button{flex:1;padding:12px 10px;font-size:16px;letter-spacing:1px;white-space:nowrap}
 #confirmYes{color:#ffb4e3}
+/* Cross save: copy this device's save code, or load one from another device */
+.confirm.saving{place-items:start center;overflow-y:auto}
+.savebox{max-width:460px;border-top-color:var(--lime)}
+.savebox .eyebrow{color:var(--lime)}
+.savesum{margin:0 0 14px;font:500 12px/1.5 var(--mono);color:#c9d3e0}
+.savelabel{display:block;margin:14px 0 6px;font:600 13px var(--display);letter-spacing:1.5px;text-transform:uppercase;color:#c9d3e0}
+.savecode{box-sizing:border-box;width:100%;padding:10px;resize:vertical;color:#79dcff;background:#06080d;border:1px solid #0b0d12;border-radius:0;box-shadow:inset 0 2px 6px #000c;font:500 16px/1.35 var(--mono);word-break:break-all}
+.savecode:focus{outline:2px solid var(--lime);outline-offset:1px}
+.savebox .actions{margin-top:8px}
+.savemsg{min-height:1.4em;margin:10px 0 0;font-size:13px;color:#c9d3e0}
+.savemsg.warn{color:#ff8abf}
 
 /* Pause and results */
 .result{position:relative;text-align:center;padding:34px 18px}
@@ -391,8 +402,8 @@ button.slot.selected .socket{border-color:#66dfff}
   .keyboard{gap:6px}
   .cluebox{margin-top:10px}
   footer{margin:0 6px 12px;padding:10px 8px;font-size:8px;flex-wrap:wrap;row-gap:10px}
-  .footctl{order:1;width:100%}
-  .footctl>button{flex:1}
+  .footctl{order:1;width:100%;flex-wrap:wrap}
+  .footctl>button{flex:1 1 auto}
 }
 @media(max-width:420px){.panelhead h2{display:none}.panelhead{padding:9px 8px}}
 /* Smallest phones (320px): reclaim chrome so three lanes keep 14-character lines */
@@ -590,7 +601,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
     </aside>
   </div>
 </main>
-<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span class="barcode" aria-hidden="true"></span><span class="footctl"><button class="grainbtn" id="fullscreen" type="button" aria-pressed="false" hidden>Full screen · <b>off</b></button><button class="grainbtn" id="grain" type="button">Grain · <b>static</b></button></span><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
+<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span class="barcode" aria-hidden="true"></span><span class="footctl"><button class="grainbtn" id="savebtn" type="button" aria-haspopup="dialog">Cross <b>save</b></button><button class="grainbtn" id="fullscreen" type="button" aria-pressed="false" hidden>Full screen · <b>off</b></button><button class="grainbtn" id="grain" type="button">Grain · <b>static</b></button></span><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
 <div id="confirm" class="confirm hidden" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
   <div class="confirmbox">
     <div class="eyebrow">Terminal in progress</div>
@@ -599,7 +610,22 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
     <div class="actions"><button class="primary" id="confirmNo" type="button">Keep playing</button><button class="subtle" id="confirmYes" type="button">Abandon terminal</button></div>
   </div>
 </div>
+<div id="save" class="confirm saving hidden" role="dialog" aria-modal="true" aria-labelledby="saveTitle" aria-describedby="saveSummary">
+  <div class="confirmbox savebox">
+    <div class="eyebrow">Cross save</div>
+    <h2 id="saveTitle">Move your save</h2>
+    <p class="savesum" id="saveSummary"></p>
+    <label class="savelabel" for="saveOut">Save code from this device</label>
+    <textarea id="saveOut" class="savecode" rows="3" readonly spellcheck="false"></textarea>
+    <div class="actions"><button class="primary" id="saveCopy" type="button">Copy code</button><button class="subtle" id="saveLink" type="button">Copy link</button></div>
+    <label class="savelabel" for="saveIn">Load a code from another device</label>
+    <textarea id="saveIn" class="savecode" rows="3" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste a CS1- code or link"></textarea>
+    <p class="savemsg" id="saveMsg" aria-live="polite"></p>
+    <div class="actions"><button class="subtle" id="saveLoad" type="button">Load code</button><button class="subtle" id="saveClose" type="button">Close</button></div>
+  </div>
+</div>
 <script src="logic.js"></script>
+<script src="save.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

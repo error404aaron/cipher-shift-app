@@ -778,6 +778,20 @@
   });
 
   document.addEventListener('keydown', (e) => {
+    // While the save dialog is open: Escape closes it, Tab cycles inside it, and typing never reaches the game.
+    if (saveOpen) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSave();
+      } else if (e.key === 'Tab') {
+        const items = [...$('save').querySelectorAll('textarea, button')];
+        const at = items.indexOf(document.activeElement);
+        const next = e.shiftKey ? (at <= 0 ? items.length - 1 : at - 1) : (at + 1) % items.length;
+        e.preventDefault();
+        items[next].focus();
+      }
+      return;
+    }
     // While the abandon dialog is open: Escape cancels, Tab stays between its two buttons, nothing else acts.
     if (state.confirming) {
       if (e.key === 'Escape') {
@@ -851,6 +865,154 @@
   setGrain(GRAIN_MODES.includes(savedGrain) ? savedGrain : 'static', false);
   $('grain').onclick = () => setGrain(GRAIN_MODES[(GRAIN_MODES.indexOf(document.documentElement.dataset.grain) + 1) % GRAIN_MODES.length]);
 
+  /* ---------- Cross save ---------- */
+
+  // A save code carries wins, the grain setting and a round in progress (see save.js). Loading one keeps the higher
+  // wins count, applies the grain setting and, if the code holds a round, restores it paused.
+  const S = window.CipherSave;
+  let saveOpen = false;
+  let saveReturn = null;
+  let pendingSave = null; // a code that would replace a round in progress, waiting for a second press
+
+  function playing() {
+    return state.phase === 'intercept' || state.phase === 'decode';
+  }
+  function currentSave() {
+    // Between the third capture and the decode screen the round is effectively in decode.
+    const decode = state.phase === 'decode' || state.captures >= L.CAPTURES_NEEDED;
+    return {
+      wins: storedWins(0) ?? 0,
+      grain: document.documentElement.dataset.grain,
+      round: playing() ? {
+        mode: state.mode, phase: decode ? 'decode' : 'intercept', trace: state.trace, captures: state.captures,
+        secret: state.secret, clues: state.clues, guesses: state.history.map((h) => h.guess),
+        guess: decode ? (state.phase === 'decode' ? state.guess : Array(state.n).fill(null)) : [],
+      } : null,
+    };
+  }
+  function describe(save) {
+    const r = save.round;
+    const round = !r ? 'No terminal in progress.'
+      : 'Terminal in progress: ' + L.DIFFICULTY[r.mode].label + ', ' + (r.phase === 'decode'
+        ? 'decode stage, ' + r.guesses.length + ' of ' + L.MAX_SUBMISSIONS + ' submissions used'
+        : 'intercept stage, ' + r.captures + ' of ' + L.CAPTURES_NEEDED + ' captured') + ', trace ' + r.trace + '%.';
+    return 'Wins: ' + save.wins + ' · Grain: ' + save.grain + '. ' + round;
+  }
+  function saveMessage(text, warn = false) {
+    $('saveMsg').textContent = text;
+    $('saveMsg').classList.toggle('warn', warn);
+  }
+  function openSave(trigger) {
+    if (saveOpen) return;
+    if (state.confirming) closeConfirm(false);
+    if (playing()) pause();
+    const save = currentSave();
+    $('saveOut').value = S.encode(save);
+    $('saveSummary').textContent = describe(save);
+    $('saveIn').value = '';
+    pendingSave = null;
+    $('saveLoad').textContent = 'Load code';
+    saveMessage('');
+    saveOpen = true;
+    saveReturn = trigger;
+    $('save').classList.remove('hidden');
+    $('save').scrollTop = 0;
+    $('saveCopy').focus({ preventScroll: true });
+  }
+  function closeSave() {
+    if (!saveOpen) return;
+    saveOpen = false;
+    $('save').classList.add('hidden');
+    (state.paused ? $('resume') : saveReturn)?.focus({ preventScroll: true });
+  }
+  function copyText(text, done) {
+    const fallback = () => {
+      // Older browsers: select the code so the player can copy it by hand (or execCommand manages it).
+      $('saveOut').focus();
+      $('saveOut').select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        /* not supported */
+      }
+      saveMessage(ok ? done : 'Copy was blocked. The code is selected: copy it by hand.', !ok);
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => saveMessage(done), fallback);
+    else fallback();
+  }
+  function saveLink() {
+    return location.origin + location.pathname + '#save=' + $('saveOut').value;
+  }
+
+  function restoreRound(r) {
+    $('difficulty').value = r.mode;
+    reset();
+    Object.assign(state, { secret: r.secret, clues: r.clues, captures: r.captures });
+    setTrace(r.trace);
+    $('start').disabled = true;
+    start();
+    renderClues();
+    if (r.phase === 'decode') {
+      beginDecode();
+      state.history = r.guesses.map((guess) => ({ guess, marks: L.scoreGuess(state.secret, guess) }));
+      state.attempt = state.history.length;
+      state.guess = [...r.guess];
+      state.selected = Math.max(0, state.guess.indexOf(null));
+      renderDecode();
+    }
+    pause();
+  }
+  function loadSave() {
+    let save;
+    try {
+      save = S.decode($('saveIn').value);
+    } catch (err) {
+      pendingSave = null;
+      $('saveLoad').textContent = 'Load code';
+      return saveMessage(err.message, true);
+    }
+    const code = $('saveIn').value.trim();
+    if (save.round && playing() && pendingSave !== code) {
+      pendingSave = code;
+      $('saveLoad').textContent = 'Replace and load';
+      return saveMessage('This code holds a terminal and will replace the one in progress here. Press Replace and load to continue.', true);
+    }
+    const wins = Math.max(storedWins(0) ?? 0, save.wins);
+    try {
+      localStorage.setItem('cipherShiftWins', wins);
+    } catch {
+      /* storage unavailable: the wins count lasts for this visit only */
+    }
+    setGrain(save.grain);
+    if (save.round) restoreRound(save.round);
+    closeSave();
+    log('Save loaded: ' + wins + (wins === 1 ? ' win' : ' wins') + (save.round ? ', terminal restored.' : '.'));
+  }
+  // A link ending in #save=CODE opens the dialog with the code ready to load; nothing is applied without a press.
+  function offerLinkedSave() {
+    if (!location.hash.startsWith('#save=')) return;
+    const code = location.hash.slice('#save='.length);
+    history.replaceState(null, '', location.pathname + location.search);
+    openSave($('savebtn'));
+    $('saveIn').value = decodeURIComponent(code);
+    saveMessage('A save code came with this link. Check it, then press Load code.');
+  }
+
+  $('savebtn').onclick = (e) => openSave(e.currentTarget);
+  $('saveClose').onclick = closeSave;
+  $('saveCopy').onclick = () => copyText($('saveOut').value, 'Code copied. On the other device, open Cross save and paste it under Load.');
+  $('saveLink').onclick = () => copyText(saveLink(), 'Link copied. Opening it on another device offers this save. On iPhone, links open in Safari, so for the Home Screen app paste the code instead.');
+  $('saveLoad').onclick = loadSave;
+  $('saveIn').addEventListener('input', () => {
+    pendingSave = null;
+    $('saveLoad').textContent = 'Load code';
+  });
+  $('save').addEventListener('click', (e) => {
+    if (e.target === $('save')) closeSave(); // tap outside the box
+  });
+  window.addEventListener('hashchange', offerLinkedSave);
+
   // Full screen uses the Fullscreen API where the browser has it (desktop, Android, iPad). iPhone Safari
   // does not, so there the switch stays hidden; launching from the Home Screen runs full screen instead
   // (manifest display "fullscreen"). Already running as an installed app: nothing to switch.
@@ -894,6 +1056,7 @@
   }
 
   reset();
+  offerLinkedSave();
   // Read-only hook for automated browser checks. It exposes the hidden key, so it only exists when the
   // page is opened with ?debug (the test suites do this); normal play never has it.
   if (new URLSearchParams(location.search).has('debug')) window.CipherShiftDebug = { get state() { return state; }, motion };
