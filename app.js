@@ -94,6 +94,12 @@
     step();
   }
 
+  // Sound effects (sound.js). Restoring a saved round replays several steps at once, so it stays quiet.
+  let restoring = false;
+  function sfx(name) {
+    if (!restoring) window.CipherSound?.play(name);
+  }
+
   // Replays a one-shot CSS animation class.
   function pulse(el, cls) {
     el.classList.remove(cls);
@@ -114,6 +120,7 @@
   }
   // Returns true when the added trace triggered a lockdown.
   function addTrace(amount, reason) {
+    const before = state.trace;
     setTrace(state.trace + amount);
     for (const el of [$('traceNumber'), $('hudTrace')]) pulse(el, 'hot');
     pulse($('console'), 'hit');
@@ -121,6 +128,7 @@
       finish(false, reason || 'Security isolated the connection.');
       return true;
     }
+    if ([75, 90].some((level) => before < level && state.trace >= level)) setTimeout(() => sfx('warn'), 220);
     return false;
   }
 
@@ -335,11 +343,13 @@
     markLines(id, 'del', 1800);
     const cost = block.hazard ? L.TRACE.probe : L.TRACE.miss;
     if (addTrace(cost, block.hazard ? 'A security probe traced your signal.' : 'Too many invalid fragments. Security isolated the connection.')) return;
+    sfx(block.hazard ? 'probe' : 'miss');
     hint('interceptHint', block.hazard ? 'Security probe hit. Trace +' + cost + '%. The reference is unchanged.' : 'Mismatch. Trace +' + cost + '%. Compare every line; the reference is unchanged.', true);
     log(block.hazard ? 'Probe detected your signal.' : 'Invalid fragment rejected.');
   }
 
   function capture(id) {
+    sfx('capture');
     state.captures++;
     state.lockUntil = Infinity;
     $('packets').querySelectorAll('.packet[data-id="' + id + '"]').forEach((el) => el.classList.add('captured'));
@@ -359,6 +369,7 @@
   function refresh() {
     if (state.phase !== 'intercept' || state.paused || now() < state.lockUntil) return;
     if (addTrace(L.TRACE.refresh)) return;
+    sfx('refresh');
     newStream();
     hint('interceptHint', 'Stream refreshed with a new reference. Trace +' + L.TRACE.refresh + '%.');
     log('Stream refreshed.');
@@ -399,6 +410,7 @@
     state.lockUntil = 0;
     buildDecode();
     renderDecode();
+    sfx('decode');
     hint('decodeHint', 'Choose a slot, then tap a glyph. Use your intercepted clues.');
     showCurrent();
     focusConsole();
@@ -546,6 +558,7 @@
       hint('decodeHint', ['Glyphs never repeat: ', ...glyphLabel(g), ' moved from slot ' + (at + 1) + ' to slot ' + (state.selected + 1) + '.']);
     }
     state.guess[state.selected] = g;
+    sfx('key');
     for (let k = 1; k <= state.n; k++) {
       const i = (state.selected + k) % state.n;
       if (state.guess[i] === null) {
@@ -560,6 +573,7 @@
     if (!canDecode()) return;
     if (state.guess[state.selected] === null && state.selected > 0) state.selected--;
     state.guess[state.selected] = null;
+    sfx('erase');
     renderDecode();
   }
 
@@ -588,6 +602,7 @@
       finish(false, 'Submission limit reached. The terminal locked you out.', 'limit');
       return;
     }
+    sfx('rejected');
     const exact = marks.filter((m) => m === 'exact').length;
     log('Key rejected. ' + exact + ' of ' + state.n + ' positions verified.');
     state.guess = guess.map((g, i) => (marks[i] === 'exact' ? g : null));
@@ -601,6 +616,7 @@
   function pause() {
     if (state.paused || (state.phase !== 'intercept' && state.phase !== 'decode')) return;
     state.paused = true;
+    sfx('pause');
     stopMotion();
     showCurrent();
     $('resume').focus({ preventScroll: true });
@@ -609,6 +625,7 @@
   function resume() {
     if (!state.paused) return;
     state.paused = false;
+    sfx('resume');
     showCurrent();
     if (state.phase === 'intercept') {
       layoutCopies();
@@ -657,6 +674,7 @@
     state.lockUntil = Infinity;
     stopMotion();
     const wins = storedWins(win ? 1 : 0);
+    sfx(win ? 'win' : 'lose');
     const copy = {
       win: ['TERMINAL COMPROMISED', 'You’re through.', 'Access granted'],
       trace: ['SECURITY LOCKDOWN', 'Signal traced.', 'Connection lost'],
@@ -865,6 +883,37 @@
   setGrain(GRAIN_MODES.includes(savedGrain) ? savedGrain : 'static', false);
   $('grain').onclick = () => setGrain(GRAIN_MODES[(GRAIN_MODES.indexOf(document.documentElement.dataset.grain) + 1) % GRAIN_MODES.length]);
 
+  // Sound is on by default; the footer switch turns it off and the choice is remembered per browser.
+  function soundOn() {
+    return !!window.CipherSound?.enabled;
+  }
+  function setSound(on, remember = true) {
+    window.CipherSound?.setEnabled(on);
+    $('sound').querySelector('b').textContent = on ? 'on' : 'off';
+    $('sound').setAttribute('aria-pressed', String(on));
+    if (remember) {
+      try {
+        localStorage.setItem('cipherShiftSound', on ? 'on' : 'off');
+      } catch {
+        /* storage unavailable: the choice lasts for this visit */
+      }
+    }
+  }
+  let savedSound = null;
+  try {
+    savedSound = localStorage.getItem('cipherShiftSound');
+  } catch {
+    /* storage unavailable */
+  }
+  if (window.CipherSound) {
+    setSound(savedSound !== 'off', false);
+    $('sound').onclick = () => setSound(!soundOn());
+    // Browsers only start audio from a user gesture: wake it on the first tap or key press.
+    for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => window.CipherSound.unlock(), { capture: true });
+  } else {
+    $('sound').hidden = true;
+  }
+
   /* ---------- Cross save ---------- */
 
   // A save code carries wins, the grain setting and a round in progress (see save.js). Loading one keeps the higher
@@ -883,6 +932,7 @@
     return {
       wins: storedWins(0) ?? 0,
       grain: document.documentElement.dataset.grain,
+      sound: soundOn() ? 'on' : 'off',
       round: playing() ? {
         mode: state.mode, phase: decode ? 'decode' : 'intercept', trace: state.trace, captures: state.captures,
         secret: state.secret, clues: state.clues, guesses: state.history.map((h) => h.guess),
@@ -896,7 +946,7 @@
       : 'Terminal in progress: ' + L.DIFFICULTY[r.mode].label + ', ' + (r.phase === 'decode'
         ? 'decode stage, ' + r.guesses.length + ' of ' + L.MAX_SUBMISSIONS + ' submissions used'
         : 'intercept stage, ' + r.captures + ' of ' + L.CAPTURES_NEEDED + ' captured') + ', trace ' + r.trace + '%.';
-    return 'Wins: ' + save.wins + ' · Grain: ' + save.grain + '. ' + round;
+    return 'Wins: ' + save.wins + ' · Grain: ' + save.grain + ' · Sound: ' + save.sound + '. ' + round;
   }
   function saveMessage(text, warn = false) {
     $('saveMsg').textContent = text;
@@ -946,6 +996,7 @@
   }
 
   function restoreRound(r) {
+    restoring = true;
     $('difficulty').value = r.mode;
     reset();
     Object.assign(state, { secret: r.secret, clues: r.clues, captures: r.captures });
@@ -962,6 +1013,7 @@
       renderDecode();
     }
     pause();
+    restoring = false;
   }
   function loadSave() {
     let save;
@@ -985,6 +1037,7 @@
       /* storage unavailable: the wins count lasts for this visit only */
     }
     setGrain(save.grain);
+    if (save.sound) setSound(save.sound === 'on');
     if (save.round) restoreRound(save.round);
     closeSave();
     log('Save loaded: ' + wins + (wins === 1 ? ' win' : ' wins') + (save.round ? ', terminal restored.' : '.'));
