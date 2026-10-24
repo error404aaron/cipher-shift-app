@@ -881,6 +881,18 @@
     showFullscreen();
   }
 
+  // Offline support (sw.js). A release that arrives while this page is open takes over at once; on the welcome
+  // screen the page reloads into it, and during a round the update waits for the next launch.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    const updating = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (updating && state.phase === 'welcome' && !state.confirming) location.reload();
+    });
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      /* not allowed here (private mode, blocked storage): the game still runs online */
+    });
+  }
+
   reset();
   // Read-only hook for automated browser checks. It exposes the hidden key, so it only exists when the
   // page is opened with ?debug (the test suites do this); normal play never has it.
