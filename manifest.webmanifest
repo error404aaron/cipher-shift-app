@@ -5,7 +5,7 @@
   "id": "./",
   "start_url": "./",
   "scope": "./",
-  "display": "browser",
+  "display": "fullscreen",
   "background_color": "#080a17",
   "theme_color": "#080a17",
   "icons": [

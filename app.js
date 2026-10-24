@@ -800,6 +800,13 @@
       }
       return;
     }
+    if (e.key === 'f' || e.key === 'F') {
+      if (!$('fullscreen').hidden) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+      return;
+    }
     if (!canDecode()) return;
     if (e.key >= '1' && e.key <= String(L.GLYPHS.length)) {
       e.preventDefault();
@@ -843,6 +850,36 @@
   }
   setGrain(GRAIN_MODES.includes(savedGrain) ? savedGrain : 'static', false);
   $('grain').onclick = () => setGrain(GRAIN_MODES[(GRAIN_MODES.indexOf(document.documentElement.dataset.grain) + 1) % GRAIN_MODES.length]);
+
+  // Full screen uses the Fullscreen API where the browser has it (desktop, Android, iPad). iPhone Safari
+  // does not, so there the switch stays hidden; launching from the Home Screen runs full screen instead
+  // (manifest display "fullscreen"). Already running as an installed app: nothing to switch.
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const fsEnabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+  const installed = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+  function toggleFullscreen() {
+    const root = document.documentElement;
+    try {
+      const done = fsElement()
+        ? (document.exitFullscreen || document.webkitExitFullscreen).call(document)
+        : (root.requestFullscreen || root.webkitRequestFullscreen).call(root, { navigationUI: 'hide' });
+      done?.catch?.(() => { /* refused (no user gesture or blocked): the label keeps the real state */ });
+    } catch {
+      /* refused synchronously by an older engine */
+    }
+  }
+  function showFullscreen() {
+    const on = !!fsElement();
+    $('fullscreen').querySelector('b').textContent = on ? 'on' : 'off';
+    $('fullscreen').setAttribute('aria-pressed', String(on));
+  }
+  if (fsEnabled && !installed) {
+    $('fullscreen').hidden = false;
+    $('fullscreen').onclick = toggleFullscreen;
+    document.addEventListener('fullscreenchange', showFullscreen);
+    document.addEventListener('webkitfullscreenchange', showFullscreen);
+    showFullscreen();
+  }
 
   reset();
   // Read-only hook for automated browser checks. It exposes the hidden key, so it only exists when the

@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#080a17">
 <meta name="application-name" content="Cipher Shift">
 <meta name="apple-mobile-web-app-title" content="Cipher Shift">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="icons/favicon-16.png" type="image/png" sizes="16x16">
@@ -38,7 +41,7 @@
   --slot:linear-gradient(135deg,transparent 42%,#0b0d12cc 42% 58%,transparent 58%)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;min-height:100vh;color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;background-color:var(--bg);background-image:var(--grain-layer),linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px),radial-gradient(ellipse at 50% -20%,#15233c,transparent 65%);background-size:128px 128px,48px 48px,48px 48px,auto;background-attachment:fixed;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;background-color:var(--bg);background-image:var(--grain-layer),linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px),radial-gradient(ellipse at 50% -20%,#15233c,transparent 65%);background-size:128px 128px,48px 48px,48px 48px,auto;background-attachment:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 button,select{font:inherit}
 button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 button:focus-visible,select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
@@ -79,6 +82,7 @@ footer .barcode{width:96px;height:12px}
 .grainbtn{min-height:40px;padding:6px 12px;color:#c9d3e0;background:var(--grain-layer),var(--brushed),var(--metal-dark);border:1px solid #0b0d12;box-shadow:var(--bevel),0 2px 0 #07090d;font:600 13px var(--display);letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 1px 0 #000;white-space:nowrap}
 .grainbtn b{color:var(--lime);font-weight:600}
 @media(hover:hover){.grainbtn:hover{color:var(--lime)}}
+.footctl{display:flex;gap:8px}
 
 /* Film grain from one pre-rendered tile (tools/make-grain.mjs).
    Static: baked into the metal surfaces as their top background layer, painted once and never repainted
@@ -386,7 +390,9 @@ button.slot.selected .socket{border-color:#66dfff}
   .slot{width:48px;height:48px;font-size:22px}
   .keyboard{gap:6px}
   .cluebox{margin-top:10px}
-  footer{margin:0 6px 12px;padding:10px 8px;font-size:8px}
+  footer{margin:0 6px 12px;padding:10px 8px;font-size:8px;flex-wrap:wrap;row-gap:10px}
+  .footctl{order:1;width:100%}
+  .footctl>button{flex:1}
 }
 @media(max-width:420px){.panelhead h2{display:none}.panelhead{padding:9px 8px}}
 /* Smallest phones (320px): reclaim chrome so three lanes keep 14-character lines */
@@ -584,7 +590,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
     </aside>
   </div>
 </main>
-<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span class="barcode" aria-hidden="true"></span><button class="grainbtn" id="grain" type="button">Grain · <b>static</b></button><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
+<footer><span>CS / EXPERIMENTAL SYSTEMS DIVISION</span><span class="barcode" aria-hidden="true"></span><span class="footctl"><button class="grainbtn" id="fullscreen" type="button" aria-pressed="false" hidden>Full screen · <b>off</b></button><button class="grainbtn" id="grain" type="button">Grain · <b>static</b></button></span><span>FICTIONAL SYSTEMS · LOCAL PLAY</span></footer>
 <div id="confirm" class="confirm hidden" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
   <div class="confirmbox">
     <div class="eyebrow">Terminal in progress</div>
