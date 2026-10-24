@@ -22,11 +22,13 @@
   const fromB64 = (s) => atob(s.replace(/-/g, '+').replace(/_/g, '/'));
   const glyphIndex = (g) => L.GLYPHS.indexOf(g);
 
-  // save: { wins, grain, sound, round }. sound is 'on' or 'off' (null when a code predates it); round is null or
+  // save: { wins, grain, sound, music, round }. sound and music are 'on' or 'off' (null when a code predates them);
+  // round is null or
   // { mode, phase, trace, captures, secret, clues, guesses, guess } (guesses: rejected submissions; guess: the entry row).
   function encode(save) {
     const data = { v: VERSION, w: save.wins, g: GRAINS.indexOf(save.grain) };
     if (save.sound) data.s = save.sound === 'on' ? 1 : 0;
+    if (save.music) data.m = save.music === 'on' ? 1 : 0;
     const r = save.round;
     if (r) {
       data.r = [
@@ -57,7 +59,7 @@
   }
 
   // Accepts a bare code, a code with stray spaces or line breaks, or a whole link ending in #save=CODE.
-  // Returns { wins, grain, sound, round } or throws an Error whose message can be shown to the player.
+  // Returns { wins, grain, sound, music, round } or throws an Error whose message can be shown to the player.
   function decode(input) {
     const text = String(input ?? '').trim();
     const code = (text.includes('#save=') ? decodeURIComponent(text.split('#save=')[1]) : text).replace(/\s+/g, '');
@@ -80,8 +82,8 @@
 
   function validate(d) {
     if (!d || d.v !== VERSION || !isInt(d.w, 0, MAX_WINS) || !isInt(d.g, 0, GRAINS.length - 1)) fail('bad');
-    if (d.s !== undefined && d.s !== 0 && d.s !== 1) fail('bad');
-    const save = { wins: d.w, grain: GRAINS[d.g], sound: d.s === undefined ? null : d.s ? 'on' : 'off', round: null };
+    const flag = (f) => (f === undefined ? null : f === 1 ? 'on' : f === 0 ? 'off' : fail('bad'));
+    const save = { wins: d.w, grain: GRAINS[d.g], sound: flag(d.s), music: flag(d.m), round: null };
     if (d.r === undefined) return save;
     if (!Array.isArray(d.r) || d.r.length !== 8) fail('bad');
     const [m, p, trace, captures, s, c, gs, g] = d.r;

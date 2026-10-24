@@ -22,6 +22,16 @@
   }
   function show(id) {
     SCREENS.forEach((s) => $(s).classList.toggle('hidden', s !== id));
+    updateMood();
+  }
+  // The score follows the game: calm on the welcome and pause screens, a hunt during intercept, an arpeggio in decode,
+  // danger from 75% trace, and silence on the result screen (the win and lockdown sounds take over).
+  function updateMood() {
+    if (!window.CipherSound || !state) return;
+    const live = !state.paused && (state.phase === 'intercept' || state.phase === 'decode');
+    let mood = state.paused || state.phase === 'welcome' ? 'calm' : 'off';
+    if (live) mood = state.trace >= 75 ? 'danger' : state.phase === 'intercept' ? 'hunt' : 'crack';
+    window.CipherSound.setMood(mood);
   }
   function showCurrent() {
     show(state.paused ? 'paused' : state.phase);
@@ -117,6 +127,7 @@
     $('traceMeter').setAttribute('aria-valuenow', state.trace);
     // Escalation: the meter pulses from 50%, the console tints at 75% and alarms at 90%.
     document.body.dataset.trace = state.trace >= 90 ? 'critical' : state.trace >= 75 ? 'high' : state.trace >= 50 ? 'warn' : '';
+    updateMood();
   }
   // Returns true when the added trace triggered a lockdown.
   function addTrace(amount, reason) {
@@ -905,13 +916,39 @@
   } catch {
     /* storage unavailable */
   }
+  // Music has its own switch (default on), remembered the same way.
+  function musicOn() {
+    return !!window.CipherSound?.music;
+  }
+  function setMusic(on, remember = true) {
+    window.CipherSound?.setMusic(on);
+    $('music').querySelector('b').textContent = on ? 'on' : 'off';
+    $('music').setAttribute('aria-pressed', String(on));
+    if (remember) {
+      try {
+        localStorage.setItem('cipherShiftMusic', on ? 'on' : 'off');
+      } catch {
+        /* storage unavailable: the choice lasts for this visit */
+      }
+    }
+  }
+  let savedMusic = null;
+  try {
+    savedMusic = localStorage.getItem('cipherShiftMusic');
+  } catch {
+    /* storage unavailable */
+  }
   if (window.CipherSound) {
     setSound(savedSound !== 'off', false);
+    setMusic(savedMusic !== 'off', false);
     $('sound').onclick = () => setSound(!soundOn());
-    // Browsers only start audio from a user gesture: wake it on the first tap or key press.
-    for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => window.CipherSound.unlock(), { capture: true });
+    $('music').onclick = () => setMusic(!musicOn());
+    // Browsers only start audio from a user gesture. Safari counts a finished tap or click (touchend, click), not
+    // pointerdown, so listen to all of them; unlock() is cheap after the first time.
+    for (const type of ['pointerdown', 'touchend', 'click', 'keydown']) document.addEventListener(type, () => window.CipherSound.unlock(), { capture: true });
   } else {
     $('sound').hidden = true;
+    $('music').hidden = true;
   }
 
   /* ---------- Cross save ---------- */
@@ -933,6 +970,7 @@
       wins: storedWins(0) ?? 0,
       grain: document.documentElement.dataset.grain,
       sound: soundOn() ? 'on' : 'off',
+      music: musicOn() ? 'on' : 'off',
       round: playing() ? {
         mode: state.mode, phase: decode ? 'decode' : 'intercept', trace: state.trace, captures: state.captures,
         secret: state.secret, clues: state.clues, guesses: state.history.map((h) => h.guess),
@@ -1038,6 +1076,7 @@
     }
     setGrain(save.grain);
     if (save.sound) setSound(save.sound === 'on');
+    if (save.music) setMusic(save.music === 'on');
     if (save.round) restoreRound(save.round);
     closeSave();
     log('Save loaded: ' + wins + (wins === 1 ? ' win' : ' wins') + (save.round ? ', terminal restored.' : '.'));
