@@ -148,8 +148,14 @@
     $('confirm').classList.add('hidden');
     clearTimeout(state?.timer);
     clearInterval(state?.revealTimer);
+    if (!L.unlocked($('difficulty').value, cleared())) $('difficulty').value = 'standard';
     const mode = $('difficulty').value;
-    const cfg = L.DIFFICULTY[mode] ?? L.DIFFICULTY.standard;
+    const cfg = L.DIFFICULTY[mode];
+    for (const el of document.querySelectorAll('[data-cost]')) {
+      const v = cfg.trace[el.dataset.cost];
+      el.textContent = { miss: 'Wrong +' + v + '%', probe: 'Probe +' + v + '%', submit: 'Rejected +' + v + '%', refresh: v }[el.dataset.cost];
+    }
+    $('refresh').setAttribute('aria-label', 'Refresh stream, costs ' + cfg.trace.refresh + '% trace');
     state = { mode, cfg, n: cfg.n, trace: 0, captures: 0, attempt: 0, guess: [], history: [], phase: 'welcome', paused: false, selected: 0, lockUntil: 0, timer: 0 };
     state.secret = L.makeSecret(state.n);
     state.clues = L.makeClues(state.secret);
@@ -352,7 +358,7 @@
     state.lockUntil = t + INPUT_GUARD_MS;
     flash(id, 'rejected');
     markLines(id, 'del', 1800);
-    const cost = block.hazard ? L.TRACE.probe : L.TRACE.miss;
+    const cost = block.hazard ? state.cfg.trace.probe : state.cfg.trace.miss;
     if (addTrace(cost, block.hazard ? 'A security probe traced your signal.' : 'Too many invalid fragments. Security isolated the connection.')) return;
     sfx(block.hazard ? 'probe' : 'miss');
     hint('interceptHint', block.hazard ? 'Security probe hit. Trace +' + cost + '%. The reference is unchanged.' : 'Mismatch. Trace +' + cost + '%. Compare every line; the reference is unchanged.', true);
@@ -379,10 +385,10 @@
 
   function refresh() {
     if (state.phase !== 'intercept' || state.paused || now() < state.lockUntil) return;
-    if (addTrace(L.TRACE.refresh)) return;
+    if (addTrace(state.cfg.trace.refresh)) return;
     sfx('refresh');
     newStream();
-    hint('interceptHint', 'Stream refreshed with a new reference. Trace +' + L.TRACE.refresh + '%.');
+    hint('interceptHint', 'Stream refreshed with a new reference. Trace +' + state.cfg.trace.refresh + '%.');
     log('Stream refreshed.');
   }
 
@@ -492,9 +498,9 @@
   }
 
   function renderDecode() {
-    const left = L.MAX_SUBMISSIONS - state.attempt;
+    const left = state.cfg.tries - state.attempt;
     $('attempts').textContent = left + (left === 1 ? ' try left' : ' tries left');
-    $('pips').replaceChildren(...Array.from({ length: L.MAX_SUBMISSIONS }, (_, i) => {
+    $('pips').replaceChildren(...Array.from({ length: state.cfg.tries }, (_, i) => {
       const pip = document.createElement('i');
       if (i < left) pip.className = 'on';
       return pip;
@@ -524,7 +530,7 @@
     const live = state.phase === 'decode';
     $('entry').dataset.n = rowNumber(state.attempt);
     $('entry').classList.toggle('hidden', !live);
-    const future = live ? L.MAX_SUBMISSIONS - state.attempt - 1 : 0;
+    const future = live ? state.cfg.tries - state.attempt - 1 : 0;
     $('future').replaceChildren(...Array.from({ length: future }, (_, k) => {
       const row = document.createElement('div');
       row.className = 'row';
@@ -608,8 +614,8 @@
       finish(true, 'Access key verified. Encrypted archive recovered.');
       return;
     }
-    if (addTrace(state.cfg.submitTrace, 'Rejected keys pushed trace to 100%. Security isolated the connection.')) return;
-    if (state.attempt >= L.MAX_SUBMISSIONS) {
+    if (addTrace(state.cfg.trace.submit, 'Rejected keys pushed trace to 100%. Security isolated the connection.')) return;
+    if (state.attempt >= state.cfg.tries) {
       finish(false, 'Submission limit reached. The terminal locked you out.', 'limit');
       return;
     }
@@ -618,7 +624,7 @@
     log('Key rejected. ' + exact + ' of ' + state.n + ' positions verified.');
     state.guess = guess.map((g, i) => (marks[i] === 'exact' ? g : null));
     state.selected = Math.max(0, state.guess.indexOf(null));
-    hint('decodeHint', 'Key rejected. Trace +' + state.cfg.submitTrace + '%. Correct positions carry forward.', true);
+    hint('decodeHint', 'Key rejected. Trace +' + state.cfg.trace.submit + '%. Correct positions carry forward.', true);
     renderDecode();
   }
 
@@ -643,6 +649,37 @@
       startMotion();
     }
     log('Connection resumed.');
+  }
+
+  // Progression: the levels won at least once, kept per browser.
+  function cleared() {
+    try {
+      const saved = localStorage.getItem('cipherShiftCleared');
+      return new Set((saved || '').split(',').filter((m) => L.DIFFICULTY[m]));
+    } catch {
+      return new Set(sessionCleared);
+    }
+  }
+  const sessionCleared = new Set(); // used when storage is unavailable
+  function addCleared(modes) {
+    const all = new Set([...cleared(), ...modes]);
+    modes.forEach((m) => sessionCleared.add(m));
+    try {
+      localStorage.setItem('cipherShiftCleared', L.LEVELS.filter((m) => all.has(m)).join(','));
+    } catch {
+      /* storage unavailable: progress lasts for this visit */
+    }
+    refreshLevels();
+  }
+  // Menu entries show each level's size and tries, or what unlocks it.
+  function refreshLevels() {
+    const done = cleared();
+    for (const opt of $('difficulty').options) {
+      const cfg = L.DIFFICULTY[opt.value];
+      const open = L.unlocked(opt.value, done);
+      opt.disabled = !open;
+      opt.textContent = cfg.label + ' · ' + (open ? cfg.n + ' glyphs, ' + cfg.tries + ' tries' : 'locked: win ' + L.DIFFICULTY[cfg.unlockAfter].label);
+    }
   }
 
   function storedWins(add) {
@@ -685,6 +722,8 @@
     state.lockUntil = Infinity;
     stopMotion();
     const wins = storedWins(win ? 1 : 0);
+    const opened = win ? L.newlyUnlocked(state.mode, cleared()) : [];
+    if (win) addCleared([state.mode]);
     sfx(win ? 'win' : 'lose');
     const copy = {
       win: ['TERMINAL COMPROMISED', 'You’re through.', 'Access granted'],
@@ -696,6 +735,7 @@
     box.innerHTML = '<div class="eyebrow"></div><div class="emblemwrap"><svg class="emblem" aria-hidden="true" focusable="false"><use/></svg></div><h2></h2><p class="msg"></p>'
       + '<div class="keyreadout"><span class="label"></span><div class="sockets" role="img"></div></div>'
       + '<dl class="readout"><div><dt>TRACE</dt><dd class="trace"></dd></div><div><dt>SUBMISSIONS</dt><dd class="subs"></dd></div><div><dt>WINS HERE</dt><dd class="wins"></dd></div></dl>'
+      + (opened.length ? '<p class="unlock" role="status"></p>' : '')
       + '<button class="primary" id="again">Connect to next terminal →</button>';
     box.querySelector('.eyebrow').textContent = copy[0];
     box.querySelector('.emblem use').setAttribute('href', win ? '#emblem-open' : '#emblem-sealed');
@@ -711,8 +751,16 @@
     box.querySelector('.sockets').replaceChildren(...sockets);
     box.querySelector('.sockets').setAttribute('aria-label', 'Access key: ' + state.secret.map(glyphName).join(', '));
     box.querySelector('.trace').textContent = state.trace + '%';
-    box.querySelector('.subs').textContent = state.attempt + ' / ' + L.MAX_SUBMISSIONS;
+    box.querySelector('.subs').textContent = state.attempt + ' / ' + state.cfg.tries;
     box.querySelector('.wins').textContent = wins ?? '—';
+    if (opened.length) {
+      const lvl = L.DIFFICULTY[opened[0]];
+      box.querySelector('.unlock').textContent = 'New level unlocked · ' + lvl.label;
+      const detail = document.createElement('span');
+      detail.textContent = lvl.n + ' glyphs, ' + lvl.tries + ' tries. Pick it from the difficulty menu.';
+      box.querySelector('.unlock').append(detail);
+      log(lvl.label + ' level unlocked.');
+    }
     revealKey(sockets, win ? 'exact' : 'revealed');
     $('again').onclick = (e) => {
       e.currentTarget.disabled = true;
@@ -748,7 +796,13 @@
     confirmReturn?.focus({ preventScroll: true });
   }
   $('restart').onclick = () => askAbandon($('restart'));
-  $('difficulty').onchange = () => askAbandon($('difficulty'));
+  $('difficulty').onchange = () => {
+    if (!L.unlocked($('difficulty').value, cleared())) {
+      $('difficulty').value = state.mode;
+      return;
+    }
+    askAbandon($('difficulty'));
+  };
   $('confirmYes').onclick = () => closeConfirm(true);
   $('confirmNo').onclick = () => closeConfirm(false);
   $('refresh').onclick = refresh;
@@ -971,6 +1025,7 @@
       grain: document.documentElement.dataset.grain,
       sound: soundOn() ? 'on' : 'off',
       music: musicOn() ? 'on' : 'off',
+      cleared: [...cleared()],
       round: playing() ? {
         mode: state.mode, phase: decode ? 'decode' : 'intercept', trace: state.trace, captures: state.captures,
         secret: state.secret, clues: state.clues, guesses: state.history.map((h) => h.guess),
@@ -982,7 +1037,7 @@
     const r = save.round;
     const round = !r ? 'No terminal in progress.'
       : 'Terminal in progress: ' + L.DIFFICULTY[r.mode].label + ', ' + (r.phase === 'decode'
-        ? 'decode stage, ' + r.guesses.length + ' of ' + L.MAX_SUBMISSIONS + ' submissions used'
+        ? 'decode stage, ' + r.guesses.length + ' of ' + L.DIFFICULTY[r.mode].tries + ' submissions used'
         : 'intercept stage, ' + r.captures + ' of ' + L.CAPTURES_NEEDED + ' captured') + ', trace ' + r.trace + '%.';
     return 'Wins: ' + save.wins + ' · Grain: ' + save.grain + ' · Sound: ' + save.sound + '. ' + round;
   }
@@ -1077,6 +1132,7 @@
     setGrain(save.grain);
     if (save.sound) setSound(save.sound === 'on');
     if (save.music) setMusic(save.music === 'on');
+    if (save.cleared) addCleared(save.cleared);
     if (save.round) restoreRound(save.round);
     closeSave();
     log('Save loaded: ' + wins + (wins === 1 ? ' win' : ' wins') + (save.round ? ', terminal restored.' : '.'));
@@ -1147,6 +1203,14 @@
     });
   }
 
+  // Players who won before the ladder existed keep Expert, which used to be open to everyone. This runs once, at
+  // load, so a new player's first win can never count as an old one.
+  try {
+    if (localStorage.getItem('cipherShiftCleared') === null && Number(localStorage.getItem('cipherShiftWins') || 0) > 0) localStorage.setItem('cipherShiftCleared', 'standard');
+  } catch {
+    /* storage unavailable */
+  }
+  refreshLevels();
   reset();
   offerLinkedSave();
   // Read-only hook for automated browser checks. It exposes the hidden key, so it only exists when the

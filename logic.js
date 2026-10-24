@@ -4,14 +4,19 @@
 
   const GLYPHS = ['△', '○', '◇', '⊕', '≋', '⌁'];
 
-  // nearMiss: decoys that differ from the reference by `mutate` tokens. The rest differ by at least 3.
+  // Levels in ladder order (save codes store the index, so new levels go at the end).
+  // n: key length; speed: stream px/s; hazards: security probes per loop; nearMiss: decoys that differ from the
+  // reference by `mutate` tokens (the rest differ by at least 3); tries: key submissions; trace: % added by a wrong
+  // block, a probe, a refresh and a rejected key; unlockAfter: the level whose win unlocks this one.
   const DIFFICULTY = {
-    easy: { label: 'Training', n: 3, speed: 18, hazards: 1, nearMiss: 2, mutate: 2, submitTrace: 12 },
-    standard: { label: 'Standard', n: 4, speed: 24, hazards: 2, nearMiss: 4, mutate: 2, submitTrace: 12 },
-    hard: { label: 'Expert', n: 5, speed: 30, hazards: 2, nearMiss: 5, mutate: 1, submitTrace: 16 },
+    easy: { label: 'Training', n: 3, speed: 16, hazards: 1, nearMiss: 1, mutate: 2, tries: 6, trace: { miss: 8, probe: 16, refresh: 3, submit: 8 } },
+    standard: { label: 'Standard', n: 4, speed: 24, hazards: 2, nearMiss: 4, mutate: 2, tries: 5, trace: { miss: 12, probe: 24, refresh: 5, submit: 12 } },
+    hard: { label: 'Expert', n: 5, speed: 32, hazards: 3, nearMiss: 5, mutate: 1, tries: 5, trace: { miss: 15, probe: 28, refresh: 8, submit: 16 }, unlockAfter: 'standard' },
+    elite: { label: 'Black ICE', n: 5, speed: 40, hazards: 3, nearMiss: 7, mutate: 1, tries: 4, trace: { miss: 20, probe: 35, refresh: 10, submit: 20 }, unlockAfter: 'hard' },
   };
-  const TRACE = { miss: 12, probe: 24, refresh: 5, lockdown: 100 };
-  const MAX_SUBMISSIONS = 5;
+  const LEVELS = Object.keys(DIFFICULTY);
+  const TRACE = { lockdown: 100 };
+  const MAX_SUBMISSIONS = Math.max(...LEVELS.map((m) => DIFFICULTY[m].tries));
   const CAPTURES_NEEDED = 3;
   const BLOCKS_PER_LOOP = 9;
 
@@ -126,9 +131,23 @@
     };
   }
 
+  // Progression ladder. `cleared` lists the levels won at least once. A level is open when it has no requirement or
+  // when its required level, or any level above that, has been cleared.
+  function unlocked(mode, cleared) {
+    const need = DIFFICULTY[mode]?.unlockAfter;
+    if (!DIFFICULTY[mode]) return false;
+    if (!need) return true;
+    return [...cleared].some((c) => LEVELS.indexOf(c) >= LEVELS.indexOf(need));
+  }
+  // The levels that a win on `mode` opens for the first time.
+  function newlyUnlocked(mode, cleared) {
+    const after = new Set([...cleared, mode]);
+    return LEVELS.filter((m) => !unlocked(m, cleared) && unlocked(m, after));
+  }
+
   const api = {
-    GLYPHS, DIFFICULTY, TRACE, MAX_SUBMISSIONS, CAPTURES_NEEDED, BLOCKS_PER_LOOP, MAX_LINE, TOKENS,
-    shuffle, makeSecret, scoreGuess, makeClues, clueText, clueHolds, codeText, tokenDistance, makeStream,
+    GLYPHS, DIFFICULTY, LEVELS, TRACE, MAX_SUBMISSIONS, CAPTURES_NEEDED, BLOCKS_PER_LOOP, MAX_LINE, TOKENS,
+    shuffle, makeSecret, scoreGuess, makeClues, clueText, clueHolds, codeText, tokenDistance, makeStream, unlocked, newlyUnlocked,
   };
   root.CipherLogic = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

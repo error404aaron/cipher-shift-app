@@ -279,6 +279,8 @@ button.slot.selected .socket{border-color:#66dfff}
 .legend .led.exact{background:#5cdcff;box-shadow:0 0 6px #2ca8ff}.legend .led.present{background:#f3d27a;box-shadow:0 0 6px #c9932a}.legend .led.absent{background:#2b3858}
 .legend b{color:#9eefff}.legend em{color:#f3d27a;font-style:normal}
 .cluebox{margin-top:14px}
+.unlock{margin:4px auto 14px;padding:8px 12px;max-width:340px;border:1px solid var(--lime);color:var(--lime);font:600 11px var(--mono);letter-spacing:2px;text-transform:uppercase;background:#c8ff2e14;box-shadow:0 0 14px #c8ff2e30}
+.unlock span{display:block;margin-top:3px;color:#d5dde8;font:500 11px var(--mono);letter-spacing:.5px;text-transform:none}
 .cluebox h3,.stat h3{margin:0 0 6px;font:700 15px var(--display);letter-spacing:2px;text-transform:uppercase;color:var(--ink)}
 .clue{border-left:2px solid var(--lime);padding:8px 10px;font-size:12px;background:#0e1420;color:#d5dde8;margin-top:8px}
 .clue b{font-family:var(--mono);color:#7b98c4;font-weight:400;margin-right:6px}
@@ -529,7 +531,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
 <main>
   <div class="intro">
     <div class="introcopy"><div class="eyebrow">CS–07 / FIELD DECRYPTION UNIT</div><h1>Find the signal.<br>Break the <em>cipher.</em></h1><p>Intercept fragments. Deduce the sequence. Leave no trace.</p></div>
-    <div class="settings"><select id="difficulty" aria-label="Difficulty"><option value="standard">Standard · 4 glyphs</option><option value="easy">Training · 3 glyphs</option><option value="hard">Expert · 5 glyphs</option></select><button class="subtle" id="restart">New terminal ↗</button></div>
+    <div class="settings"><select id="difficulty" aria-label="Difficulty"><option value="easy">Training · 3 glyphs</option><option value="standard" selected>Standard · 4 glyphs</option><option value="hard">Expert · 5 glyphs</option><option value="elite">Black ICE · 5 glyphs</option></select><button class="subtle" id="restart">New terminal ↗</button></div>
   </div>
   <div class="layout">
     <section class="panel" id="console" aria-labelledby="title">
@@ -559,7 +561,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
                 </div>
               </div>
               <p>Tap the block that matches the reference <b>exactly</b> as the stream loops. Three captures decrypt three clues.</p>
-              <ul class="costs"><li class="warn">Wrong +12%</li><li class="warn">Probe +24%</li></ul>
+              <ul class="costs"><li class="warn" data-cost="miss">Wrong +12%</li><li class="warn" data-cost="probe">Probe +24%</li></ul>
             </section>
             <section class="stagecard" aria-labelledby="howto2">
               <h3 id="howto2"><span class="stepnum">02</span> Decode</h3>
@@ -571,7 +573,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
                 <div class="slot exact"><svg class="glyph"><use href="#g-bolt"/></svg><small>✓</small><i class="led"></i></div>
               </div>
               <p>Deduce the hidden glyph key from your clues and the lock's feedback. Glyphs never repeat. <b>Five tries.</b></p>
-              <ul class="costs"><li class="ok">✓ Correct</li><li class="gold">↔ Wrong spot</li><li class="warn">Rejected +12%</li></ul>
+              <ul class="costs"><li class="ok">✓ Correct</li><li class="gold">↔ Wrong spot</li><li class="warn" data-cost="submit">Rejected +12%</li></ul>
             </section>
           </div>
           <div class="tracebrief"><span class="bar" aria-hidden="true"><i></i></span><p>Trace builds with every mistake. <b>100% locks the terminal.</b> No countdown: missed blocks loop back.</p></div>
@@ -586,7 +588,7 @@ body[data-trace="high"] .stat-trace .eyebrow,body[data-trace="critical"] .stat-t
                 <div class="refmeta" aria-hidden="true"><span class="meta">SIG <b id="refsig">----</b><br>LEN 4 · EXACT</span><span class="barcode"></span></div>
               </div>
               <p class="hint" id="interceptHint" aria-live="polite">Tap the block that matches the reference exactly. Missed it? Every block loops back.</p>
-              <div class="actions"><button class="subtle" id="refresh" aria-label="Refresh stream, costs 5% trace">Refresh · +5%</button><button class="subtle pause">Pause</button></div>
+              <div class="actions"><button class="subtle" id="refresh" aria-label="Refresh stream, costs 5% trace">Refresh · +<span data-cost="refresh">5</span>%</button><button class="subtle pause">Pause</button></div>
             </div>
             <div class="stream" id="stream"><div class="track" id="packets"></div></div>
           </div>

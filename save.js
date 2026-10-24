@@ -22,13 +22,15 @@
   const fromB64 = (s) => atob(s.replace(/-/g, '+').replace(/_/g, '/'));
   const glyphIndex = (g) => L.GLYPHS.indexOf(g);
 
-  // save: { wins, grain, sound, music, round }. sound and music are 'on' or 'off' (null when a code predates them);
+  // save: { wins, grain, sound, music, cleared, round }. sound and music are 'on' or 'off' and cleared lists the levels
+  // won (each null when a code predates it);
   // round is null or
   // { mode, phase, trace, captures, secret, clues, guesses, guess } (guesses: rejected submissions; guess: the entry row).
   function encode(save) {
     const data = { v: VERSION, w: save.wins, g: GRAINS.indexOf(save.grain) };
     if (save.sound) data.s = save.sound === 'on' ? 1 : 0;
     if (save.music) data.m = save.music === 'on' ? 1 : 0;
+    if (save.cleared) data.c = save.cleared.reduce((bits, m) => bits | (1 << MODES.indexOf(m)), 0);
     const r = save.round;
     if (r) {
       data.r = [
@@ -59,7 +61,7 @@
   }
 
   // Accepts a bare code, a code with stray spaces or line breaks, or a whole link ending in #save=CODE.
-  // Returns { wins, grain, sound, music, round } or throws an Error whose message can be shown to the player.
+  // Returns { wins, grain, sound, music, cleared, round } or throws an Error whose message can be shown to the player.
   function decode(input) {
     const text = String(input ?? '').trim();
     const code = (text.includes('#save=') ? decodeURIComponent(text.split('#save=')[1]) : text).replace(/\s+/g, '');
@@ -83,7 +85,9 @@
   function validate(d) {
     if (!d || d.v !== VERSION || !isInt(d.w, 0, MAX_WINS) || !isInt(d.g, 0, GRAINS.length - 1)) fail('bad');
     const flag = (f) => (f === undefined ? null : f === 1 ? 'on' : f === 0 ? 'off' : fail('bad'));
-    const save = { wins: d.w, grain: GRAINS[d.g], sound: flag(d.s), music: flag(d.m), round: null };
+    if (d.c !== undefined && !isInt(d.c, 0, (1 << MODES.length) - 1)) fail('bad');
+    const cleared = d.c === undefined ? null : MODES.filter((_, i) => d.c & (1 << i));
+    const save = { wins: d.w, grain: GRAINS[d.g], sound: flag(d.s), music: flag(d.m), cleared, round: null };
     if (d.r === undefined) return save;
     if (!Array.isArray(d.r) || d.r.length !== 8) fail('bad');
     const [m, p, trace, captures, s, c, gs, g] = d.r;
@@ -107,7 +111,7 @@
     if (phase === 'intercept') {
       if (!isInt(captures, 0, L.CAPTURES_NEEDED - 1) || gs.length || g.length) fail('bad');
     } else {
-      if (captures !== L.CAPTURES_NEEDED || gs.length >= L.MAX_SUBMISSIONS) fail('bad');
+      if (captures !== L.CAPTURES_NEEDED || gs.length >= L.DIFFICULTY[mode].tries) fail('bad');
       guesses = gs.map((row) => glyphs(row, n));
       if (guesses.some((row) => row.every((x, i) => x === secret[i]))) fail('bad'); // a solved round has already ended
       guess = glyphs(g, n, true);
